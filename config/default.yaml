@@ -1,0 +1,6 @@
+data:
+  pets_root: ./data/pets
+  eurosat_root: ./data/eurosat
+label_budgets: [1, 2, 5, 10, 25, 50, "all"]
+seeds: [0, 1, 2, 3, 4]
+backbones: ["resnet50", "dinov2_vits14"]

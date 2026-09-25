@@ -1,0 +1,6 @@
+torch
+torchvision
+datasets
+scikit-learn
+numpy
+pyyaml
