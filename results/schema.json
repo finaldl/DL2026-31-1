@@ -1,0 +1,12 @@
+{
+  "dataset": "",
+  "backbone": "",
+  "method": "",
+  "k_shot": 0,
+  "seed": 0,
+  "accuracy": 0.0,
+  "f1_macro": 0.0,
+  "num_train_samples": 0,
+  "num_test_samples": 0,
+  "run_id": ""
+}
