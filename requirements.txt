@@ -1,6 +1,8 @@
 torch
 torchvision
 datasets
-scikit-learn
+scikit-learn>=1.7,<2
 numpy
 pyyaml
+pandas>=2,<3
+matplotlib>=3.8,<4
