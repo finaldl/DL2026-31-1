@@ -1,0 +1,15 @@
+resnet50:
+  batch_size: 32
+  lr_head: 0.001
+  lr_backbone: 0.0001
+  weight_decay: 0.01
+  epochs_stage1: 10
+  epochs_stage2: 30
+
+dinov2:
+  batch_size: 32
+  lr_head: 0.001
+  lr_backbone: 0.00001
+  weight_decay: 0.05
+  epochs_stage1: 10
+  epochs_stage2: 30
