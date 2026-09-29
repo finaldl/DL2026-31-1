@@ -31,6 +31,14 @@ _ALIASES = {
     ),
 }
 
+# Aliases for single-split cache files (e.g. Thu's "*_trainval.pt" / "*_test.pt",
+# each holding one split with generic "features"/"labels" keys rather than a
+# combined train+test dictionary).
+_SINGLE_SPLIT_ALIASES = {
+    "features": ("features", "x", "X", "embeddings", "feats"),
+    "labels": ("labels", "y", "targets"),
+}
+
 
 def l2_normalize(values, eps=1e-12):
     """L2-normalize each row of a two-dimensional feature matrix."""
@@ -90,8 +98,8 @@ def _validate_features(features, source="feature cache"):
     }
 
 
-def load_features(path):
-    """Load and validate a ``.pt``, ``.npz``, ``.pkl`` feature cache."""
+def _load_raw_cache(path):
+    """Load a ``.pt``, ``.npz``, ``.pkl`` file into a plain dict of arrays."""
     extension = os.path.splitext(path)[1].lower()
     if extension == ".pt":
         try:
@@ -103,19 +111,23 @@ def load_features(path):
             raw_object = torch.load(path, map_location="cpu", weights_only=False)
         if not isinstance(raw_object, dict):
             raise ValueError(f"{path}: expected a dictionary in the .pt cache")
-        raw = {key: _to_numpy(value) for key, value in raw_object.items()}
+        return {key: _to_numpy(value) for key, value in raw_object.items()}
     elif extension == ".npz":
         with np.load(path, allow_pickle=False) as archive:
-            raw = {key: archive[key] for key in archive.files}
+            return {key: archive[key] for key in archive.files}
     elif extension in (".pkl", ".pickle"):
         with open(path, "rb") as handle:
             raw_object = pickle.load(handle)
         if not isinstance(raw_object, dict):
             raise ValueError(f"{path}: expected a dictionary in the pickle cache")
-        raw = {key: _to_numpy(value) for key, value in raw_object.items()}
+        return {key: _to_numpy(value) for key, value in raw_object.items()}
     else:
         raise ValueError(f"Unsupported feature-cache extension: {extension or '<none>'}")
 
+
+def load_features(path):
+    """Load and validate a combined train+test feature cache."""
+    raw = _load_raw_cache(path)
     standardized = {}
     missing = []
     for standard_name, aliases in _ALIASES.items():
@@ -127,6 +139,44 @@ def load_features(path):
     if missing:
         raise KeyError(f"{path}: missing required arrays {missing}; found {sorted(raw)}")
     return _validate_features(standardized, source=path)
+
+
+def _load_single_split(path):
+    """Load one ``{features, labels}`` cache (one side of a train/test pair)."""
+    raw = _load_raw_cache(path)
+    values = {}
+    missing = []
+    for standard_name, aliases in _SINGLE_SPLIT_ALIASES.items():
+        alias = next((candidate for candidate in aliases if candidate in raw), None)
+        if alias is None:
+            missing.append(standard_name)
+        else:
+            values[standard_name] = np.asarray(raw[alias])
+    if missing:
+        raise KeyError(f"{path}: missing required arrays {missing}; found {sorted(raw)}")
+    return values["features"], values["labels"]
+
+
+def load_split_features(train_path, test_path):
+    """Load and validate a feature cache stored as two separate files.
+
+    Thu's caches ship as ``{backbone}_{dataset}_trainval.pt`` /
+    ``{backbone}_{dataset}_test.pt`` (or ``_train.pt`` for EuroSAT), each
+    holding only a generic ``features``/``labels`` pair rather than a single
+    combined train+test dictionary. This loads both halves and assembles
+    them into the same standardized shape ``load_features`` returns.
+    """
+    train_x, train_y = _load_single_split(train_path)
+    test_x, test_y = _load_single_split(test_path)
+    return _validate_features(
+        {
+            "train_features": train_x,
+            "train_labels": train_y,
+            "test_features": test_x,
+            "test_labels": test_y,
+        },
+        source=f"{train_path} + {test_path}",
+    )
 
 
 def validate_split_indices(indices, n_train, source="split"):

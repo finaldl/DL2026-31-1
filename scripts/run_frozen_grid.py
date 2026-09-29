@@ -15,7 +15,12 @@ import yaml
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.evaluate_frozen import evaluate_one, load_features, load_split_indices  # noqa: E402
+from src.evaluate_frozen import (  # noqa: E402
+    evaluate_one,
+    load_features,
+    load_split_features,
+    load_split_indices,
+)
 
 
 METHODS = ("knn", "linear_probe")
@@ -93,13 +98,42 @@ def parse_args():
     return parser.parse_args()
 
 
+FEATURE_EXTENSIONS = (".pt", ".npz", ".pkl", ".pickle")
+# Suffixes seen on Thu's per-split caches, e.g. "resnet50_pets_trainval.pt" +
+# "resnet50_pets_test.pt", or "resnet50_eurosat_train.pt" + "..._test.pt".
+SPLIT_TRAIN_SUFFIXES = ("_trainval", "_train")
+SPLIT_TEST_SUFFIX = "_test"
+
+
 def find_feature_cache(features_dir, backbone, dataset):
+    """Return a combined-cache path, or a ``(train_path, test_path)`` pair.
+
+    Looks first for a single ``{name}_{dataset}.*`` file holding both train
+    and test splits (the format ``load_features`` expects). Falls back to a
+    separate ``{name}_{dataset}{_trainval|_train}.*`` + ``{name}_{dataset}_test.*``
+    pair (the format Thu's cached features ship as).
+    """
     names = FEATURE_NAME_ALIASES.get(backbone, (backbone,))
     for name in names:
-        for extension in (".pt", ".npz", ".pkl", ".pickle"):
+        for extension in FEATURE_EXTENSIONS:
             candidate = os.path.join(features_dir, f"{name}_{dataset}{extension}")
             if os.path.isfile(candidate):
                 return candidate
+
+    for name in names:
+        for extension in FEATURE_EXTENSIONS:
+            test_candidate = os.path.join(
+                features_dir, f"{name}_{dataset}{SPLIT_TEST_SUFFIX}{extension}"
+            )
+            if not os.path.isfile(test_candidate):
+                continue
+            for suffix in SPLIT_TRAIN_SUFFIXES:
+                train_candidate = os.path.join(
+                    features_dir, f"{name}_{dataset}{suffix}{extension}"
+                )
+                if os.path.isfile(train_candidate):
+                    return train_candidate, test_candidate
+
     expected = ", ".join(f"{name}_{dataset}.*" for name in names)
     raise FileNotFoundError(f"Missing feature cache in {features_dir}: {expected}")
 
@@ -167,7 +201,10 @@ def main():
                 cache_key = (backbone, dataset)
                 try:
                     feature_path = find_feature_cache(args.features_dir, backbone, dataset)
-                    feature_cache[cache_key] = load_features(feature_path)
+                    if isinstance(feature_path, tuple):
+                        feature_cache[cache_key] = load_split_features(*feature_path)
+                    else:
+                        feature_cache[cache_key] = load_features(feature_path)
                 except Exception as exc:
                     failures.append(f"{backbone}/{dataset}: {exc}")
                     continue

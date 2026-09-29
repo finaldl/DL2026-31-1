@@ -3,3 +3,7 @@ src/data/
 __pycache__/
 *.pyc
 features/
+
+# local-only planning docs, kept on machine but not pushed to git
+/PROJECT_PLAN.md
+/WORKFLOW.md
