@@ -15,10 +15,12 @@ import pandas as pd
 
 BUDGET_X = {"1": 1, "2": 2, "5": 5, "10": 10, "25": 25, "50": 50, "all": 100}
 STYLE = {
-    ("knn", "resnet50"): {"color": "#1f77b4", "marker": "o", "linestyle": "--"},
-    ("linear_probe", "resnet50"): {"color": "#1f77b4", "marker": "s"},
-    ("knn", "dinov2_vits14"): {"color": "#d62728", "marker": "o", "linestyle": "--"},
-    ("linear_probe", "dinov2_vits14"): {"color": "#d62728", "marker": "s"},
+    ("knn", "resnet50"): {"color": "#0072B2", "marker": "o", "linestyle": "--"},
+    ("linear_probe", "resnet50"): {"color": "#0072B2", "marker": "s"},
+    ("knn", "dinov2_vits14"): {"color": "#D55E00", "marker": "o", "linestyle": "--"},
+    ("linear_probe", "dinov2_vits14"): {"color": "#D55E00", "marker": "s"},
+    ("finetune", "resnet50"): {"color": "#0072B2", "marker": "^", "linestyle": "-."},
+    ("finetune", "dinov2_vits14"): {"color": "#D55E00", "marker": "^", "linestyle": "-."},
 }
 
 
