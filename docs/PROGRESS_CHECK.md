@@ -245,6 +245,11 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 | 07/10 03:26 | Thiết: `42ddbfa` (vẽ lại `eval_v2_knn5/`), `845c1d1` (mặc định `--input master_table_v2_knn5.csv`) | ✅ Số liệu đúng `knn_k=5` (Pets kNN k=2 ≈ 59%, EuroSAT k=1 ≈ 30/25%); merge được. Còn góp ý thẩm mỹ: tiêu đề, nhãn "KNN (k=5)", màu lệch `finetune_vs_frozen.png`, script trùng |
 | 07/10 | Mỹ gửi `related_works.md` bản 2 | 🟡 Dùng được cho slide/report sau khi sửa 4 chỗ nói quá/sai và tự xác nhận Table 15 (Pets trong nguồn LVD-142M) |
 | 07/10 04:28 | Zam (`zam-audit`, `5356825`): chạy `finetune_fixed.py` 24 run | ✅ Đạt kiểm tra. Bản sửa bug thấp hơn bản gốc ở mọi k (−0.5 đến −8.0) → số chính thức không phải lower bound, RQ2 giữ nguyên. Report + README cập nhật |
+| 07/10 | Manager tạo `report/` (LaTeX, chỉ lưu ở máy Manager, không push; mỗi section một file, hình đọc từ `plots/`, hỗ trợ tên tiếng Việt qua T5 + lmodern) | ✅ Build sạch, 8 trang, 0 lỗi / 0 overfull |
+| 07/10 | Gộp trang bìa USTH vào `report/main.tex` (môn Deep Learning, đề tài Label-Efficient Image Classification…); logo chuyển vào `report/figures/usth_logo.png` | ✅ Build sạch, 9 trang |
+| 07/10 | Report (local): thêm mục lục (link tới từng chương, có References), List of Figures, List of Tables; phụ lục soạn sẵn ở `sections/appendix.tex` nhưng tắt | ✅ Build sạch, 11 trang |
+| 07/10 | Manager hoàn thiện `docs/related_works.md` thay Mỹ, đối chiếu paper gốc | ✅ DINOv2 (TMLR 01/2024): Table 15 có *Oxford-IIIT Pet / trainval* làm nguồn truy hồi (1M ảnh), EuroSAT không có (Table 15, 18); chỉ khử trùng lặp với test/val chính thức → test set tự chia của nhóm có thể có ảnh gần trùng. ViT-g 1.1B, model nhỏ distill từ ViT-g. LP-FT: FT tốt hơn LP ~2% in-distribution, kém ~7% OOD. Cập nhật report LaTeX, report Claude Docs, README |
+| 07/10 | Report (local): rà soát cuối (8 chỗ sửa: phân tích theo cặp seed, các yếu tố không đồng nhất DINOv2/ResNet, cách chọn knn_k, abstract kèm điều kiện…), thêm hình pipeline (TikZ), bật phụ lục A–E với bảng đóng góp suy ra từ git | ✅ Build sạch, 15 trang. Nhóm cần xác nhận: bảng đóng góp, bìa, yêu cầu của môn, 3 đoạn `% DRAFT` |
 
 ---
 
@@ -266,13 +271,16 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 [x] plots/finetune_vs_frozen.png slide-ready (Thiết, 07/10)
 [x] Mỹ: ghi chú research ViT + DINOv2 (related_works.md, nhận 07/10)
 [x] Mỹ: related_works.md bản 2 — đã sửa ViT-S, distillation, thêm ResNet / DINO v1 / LP-FT / datasets (07/10)
-[ ] Mỹ: sửa tiếp 4 chỗ (LP-FT nói quá + bug head; DINO kNN là "adapted from"; ResNet = degradation, không phải vanishing gradient; Pets k=1–2 trong 1 std), tự xác nhận Table 15 LVD-142M, thêm danh sách tài liệu tham khảo, rồi đưa vào docs/
+[x] related_works.md bản cuối → `docs/related_works.md` (Manager hoàn thiện thay Mỹ, 07/10): sửa 4 chỗ, thêm lại position embedding / inductive bias, danh sách tài liệu tham khảo; **Table 15 đã xác nhận** từ paper DINOv2 (TMLR)
 [ ] Draft slide lý thuyết + Q&A (Mỹ) — trễ từ 04/10
 [ ] Slide kết quả #10–#13 + phân tích #14–#16 theo master_table_wide_v2_knn5.csv — 08/10
+[x] Khung report LaTeX `report/` (07/10, **chỉ lưu ở máy Manager, không push**): build sạch, có sẵn Results / Limitations / Method / Setup / Related work / Abstract / Conclusion
+[x] Report: nháp cho 3 `[TODO]` cuối (động lực + đóng góp ở intro, phân tích EuroSAT ở discussion, future work), đánh dấu `% DRAFT` (07/10)
+[ ] Report: nhóm đọc lại các đoạn `% DRAFT` (`grep -rn DRAFT report/sections/`) — trước 8h 08/10
 [x] Audit fine-tune + loss curves (Zam, 07/10)
 [x] QUYẾT ĐỊNH: bug fine-tune → giữ số chính thức + nêu limitation, chạy finetune_fixed.py làm kết quả phụ (07/10)
 [x] Zam: results/finetune_grid_fixed.csv 24/24 dòng (`5356825`, 07/10 04:28) — kiểm tra đạt; bảng phụ trong report + README
-[ ] Merge branch zam-audit (kết quả fixed) → main
+[x] Merge branch zam-audit (kết quả fixed) → main (`feaab47`, 07/10)
 [x] Sửa scripts/run_finetune.sh (Zam, 07/10)
 [x] Merge branch zam-audit → main (`20bdae1`, 07/10)
 [x] Chạy lại pytest trên main `76efe23` → 10/10 pass (07/10; Python 3.12, scikit-learn 1.9.1, pandas 2.3.3, numpy 2.5.3)

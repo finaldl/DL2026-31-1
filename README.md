@@ -280,6 +280,11 @@ starts at 75%.
   `python3 scripts/verify_splits.py` (nested, k images per class, no duplicates,
   k=all = range(N) so no test indices; add `--features-dir features` to also
   check per-class counts against the cached labels).
+- **DINOv2 pretraining saw Pets-like images**: LVD-142M used the official
+  Pets trainval split as a retrieval source (1M retrieved images; DINOv2 paper,
+  Table 15); EuroSAT was not used. DINOv2 de-duplicated only against benchmark
+  test images, and our Pets test set includes official trainval images, so
+  near-duplicates in pretraining cannot be ruled out. See `docs/related_works.md`.
 - **Fine-tune recipe** equals the plan's initial candidates; there is no
   validation split in `finetune.py`, so no tuning at k=10/25 is recorded.
 - **Pets test set** is a random stratified 20% of the HF train split, not the
