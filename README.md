@@ -29,7 +29,7 @@ live in [`docs/`](docs/):
 | Phase 2 — fine-tuning grid (24 runs, Pets) | ✅ Done (clean rerun, no duplicate keys) |
 | Combined master table (frozen + fine-tune, 64 summary rows) | ✅ Done |
 | Plots | ✅ `plots/eval_v2_knn5/frozen_curves_{pets,eurosat}.png` (all methods) + `plots/finetune_vs_frozen.png` (Linear Probe vs. fine-tune, Pets, slide-ready) |
-| Fine-tuning audit | ✅ Loss curves; found a Stage-2 head bug (official numbers kept, read as lower bound); `run_finetune.sh` fixed. Bug-fixed grid (`src/finetune_fixed.py`) running 2026-10-07 as a post-freeze supplementary result |
+| Fine-tuning audit | ✅ Loss curves; found a Stage-2 head bug; `run_finetune.sh` fixed. Bug-fixed rerun (`results/finetune_grid_fixed.csv`, post-freeze supplement) scores **lower** than the official runs at every budget, so the official numbers stand |
 | Experiment freeze (2026-10-06) | 🔒 Closed. ResNet-50 aligned to V1; kNN uses `knn_k=5` (`knn_k=20` kept as a reference run). No new runs |
 | Slides, reproducibility check, rehearsals | ⏳ 2026-10-08 → 2026-10-11 |
 
@@ -54,8 +54,9 @@ Reading of the results:
 - **RQ2**: with the fixed recipe, fine-tuning never beats a Linear Probe on the
   same backbone. The gap shrinks as labels grow: ResNet-50 −6.1 / −7.5 / −5.6 /
   −1.9 pts, DINOv2 −6.4 / −3.1 / −2.6 / −1.0 pts at k = 5 / 10 / 25 / all.
-  Because of the Stage-2 head bug (see limitations) these fine-tune numbers
-  are a lower bound.
+  A Stage-2 head bug was found later (see limitations); a bug-fixed rerun
+  scores 0.5–8.0 pts *lower* and stays 2–14 pts below the Linear Probe, so the
+  conclusion holds either way.
   DINOv2 frozen + LP beats fine-tuned ResNet-50 at every budget.
 - **RQ3**: on EuroSAT the curves cross. ResNet-50 leads at k ≤ 10 (e.g. 70.2 vs
   64.5 at k=2); DINOv2 leads from k=25 on (+1.6 to +1.9 pts; 95.2 vs 93.3 at k=all).
@@ -217,6 +218,18 @@ seeds everything, BatchNorm frozen in Stage 1). It writes to
 post-freeze run of it (2026-10-07) as a **supplementary** result for a backup
 slide; the official fine-tune numbers stay those of `src/finetune.py`.
 
+Bug-fixed rerun (`results/finetune_grid_fixed.csv`, 3 seeds, Pets, Top-1 %):
+
+| Backbone | k=5 | k=10 | k=25 | k=all |
+|---|---|---|---|---|
+| ResNet-50 — official / bug-fixed | 79.4 / 71.5 | 81.6 / 76.1 | 86.8 / 82.3 | 92.3 / 90.7 |
+| DINOv2 — official / bug-fixed | 81.9 / 81.3 | 88.4 / 85.4 | 91.3 / 89.0 | 95.2 / 94.0 |
+
+The rerun changes four things at once (head trained in Stage 2, shared split
+files, full seeding, BatchNorm frozen in Stage 1), so the drop is not
+attributable to one fix; a plausible reading is that the head overfits when it
+keeps training at LR 1e-3, i.e. the bug acted as a regulariser.
+
 ### 6. Combined master table + plots
 
 ```bash
@@ -253,10 +266,9 @@ starts at 75%.
   returns the head parameters as a generator; the Stage-1 optimizer consumes
   it, so the Stage-2 head parameter group is empty (PyTorch does not raise).
   During Stage 2 only the backbone trains, toward a head frozen at its
-  10-epoch Stage-1 values. Found in the post-freeze audit; the official
-  fine-tune numbers are kept and should be read as a **lower bound**. Fixed in
-  `src/finetune_fixed.py`; its results are reported separately as a
-  post-freeze, bug-fixed supplement.
+  10-epoch Stage-1 values. Found in the post-freeze audit and fixed in
+  `src/finetune_fixed.py`. The bug-fixed rerun scores lower at every budget
+  (see section 5), so the official numbers are kept and are not a lower bound.
 - **Fine-tune and frozen use different k-shot images at k ≤ 25**:
   `finetune.py` re-samples at runtime with `src/sampler.py`, while the frozen
   grid reads `splits/*.json`; the two overlap only ~3% at k=5 (chance level).

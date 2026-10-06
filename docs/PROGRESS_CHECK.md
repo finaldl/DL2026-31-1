@@ -23,7 +23,7 @@
 | **Mỹ** | Đưa draft slide lý thuyết #4–#8 + Q&A cheat sheet lên repo/drive chung | 🔴 **Trễ** (hạn CN 4/10) | Mục 1 |
 | **Đức** | Slide kết quả #10–#13, lấy số từ **`master_table_wide_v2_knn5.csv`**, plot từ `plots/eval_v2_knn5/`. Không dùng `KET_QUA_DOC_BAO.md` (legacy) hay các file `_knn5` của commit `af699c1` (ResNet V2) | 🟡 T5 08/10 | Mục 3 |
 | **Managers** | Viết slide #14–#16 (phân tích, limitations, kết luận) theo số V1 — xem bảng câu chuyện ở mục 3 | 🟡 T5 08/10 | Mục 3 |
-| **Zam** | **Đang chạy** `src/finetune_fixed.py --grid` (Managers chọn phương án (b), 07/10; dự kiến xong khoảng 1 giờ nữa) → `results/finetune_grid_fixed.csv` 24 dòng + `runs_fixed/`; push kèm log. Chỉ dùng cho **backup slide**, ghi "post-freeze, bug-fixed" | 🔴 Sáng T5 08/10 | Mục 2.1 |
+| **Managers** | Merge `zam-audit` (kết quả fine-tune đã sửa bug), đưa bảng phụ lên backup slide; sửa câu "fine-tune là lower bound" nếu đã có trên slide | 🔴 Sáng T5 08/10 | Mục 2.1 |
 | **Đức** (không bắt buộc) | Nếu còn nhớ: cho biết `splits/*.json` được sinh bằng code nào. Không còn chặn việc gì — splits đã được coi là dữ liệu cố định, kiểm tra bằng `scripts/verify_splits.py` | 🟢 Thấp | Mục 2.4 |
 | **Thiết (+ Thu)** | Reproducibility check trên máy khác — dùng `features.zip` mới trên Drive, so với sai số ~0.1 điểm (mục 2.5) | 🟡 T6 09/10 | Mục 2.5 |
 | **Managers + Đức** | Thêm vào slide limitations: bug head Stage 2, fine-tune và frozen dùng ảnh k-shot khác nhau ở k ≤ 25 (so sánh theo mean) | 🟡 T5 08/10 | Mục 2.1, 2.4 |
@@ -65,7 +65,7 @@ Pets, Top-1 %, fine-tune 3 seed, LP 5 seed, cả hai cùng ResNet V1:
 | 25 | 86.8 ± 1.0 | 92.4 | −5.6 | 91.3 ± 0.2 | 93.9 | −2.6 |
 | all | 92.3 ± 0.6 | 94.3 | −1.9 | 95.2 ± 0.4 | 96.2 | −1.0 |
 
-**🐛 Bug (Manager đã đối chiếu code, xác nhận)**: trong `src/finetune.py`, `build_model()` trả head params dưới dạng **generator** (`model.fc.parameters()` / `model.head.parameters()`). `opt1 = AdamW(head_params, ...)` ở Stage 1 đọc hết generator → ở Stage 2, `{'params': head_params}` là **nhóm rỗng** (PyTorch không báo lỗi vì nhóm backbone không rỗng). Nghĩa là trong 30 epoch Stage 2 **chỉ backbone được train**, head đứng yên ở giá trị sau 10 epoch Stage 1. Hệ quả: số fine-tune chính thức là **lower bound**; một phần lý do "FT < LP ở mọi k" có thể đến từ bug này. Chiều hướng (khoảng cách thu hẹp khi tăng nhãn, DINOv2 > ResNet) không đổi.
+**🐛 Bug (Manager đã đối chiếu code, xác nhận)**: trong `src/finetune.py`, `build_model()` trả head params dưới dạng **generator** (`model.fc.parameters()` / `model.head.parameters()`). `opt1 = AdamW(head_params, ...)` ở Stage 1 đọc hết generator → ở Stage 2, `{'params': head_params}` là **nhóm rỗng** (PyTorch không báo lỗi vì nhóm backbone không rỗng). Nghĩa là trong 30 epoch Stage 2 **chỉ backbone được train**, head đứng yên ở giá trị sau 10 epoch Stage 1. Ban đầu nghĩ số chính thức là *lower bound* — kết quả bản sửa bug (bên dưới) cho thấy **không phải**: sửa xong lại thấp hơn.
 
 Các phát hiện khác của Zam (đã sửa trong `src/finetune_fixed.py`, **chưa chạy**, ghi ra `results/finetune_grid_fixed.csv` + `runs_fixed/`, không đụng số chính thức):
 - Chỉ seed việc chọn ảnh; khởi tạo head, thứ tự batch, augmentation không seed → chạy lại lệch cỡ std (1–3 điểm ở k=5).
@@ -73,10 +73,22 @@ Các phát hiện khác của Zam (đã sửa trong `src/finetune_fixed.py`, **c
 - Dùng ảnh k-shot khác với frozen grid (mục 2.4).
 - Recipe giữ nguyên (không tune) — đúng tinh thần freeze.
 
-**✅ Managers đã quyết (07/10): phương án (b)**:
-- Số fine-tune chính thức **giữ nguyên** (`results/finetune_grid.csv`, từ `src/finetune.py`), trình bày là *lower bound*; tự nêu bug trên slide limitations và trong Q&A.
-- Zam chạy **ngay** `src/finetune_fixed.py --grid` (~3 giờ, RTX 4060) → `results/finetune_grid_fixed.csv` + `runs_fixed/`. Đây là ngoại lệ có chủ đích sau freeze (sửa bug, không đổi recipe); kết quả chỉ lên **backup slide**, ghi rõ "post-freeze, bug-fixed", so sánh với bản gốc theo từng k.
-- Khi Zam push: Manager kiểm tra 24/24 dòng, không trùng key, đúng ảnh `splits/*.json`, rồi build bảng phụ bằng `build_master_table.py --finetune results/finetune_grid_fixed.csv` (output riêng, **không ghi đè** `master_table_v2_knn5.csv`).
+**✅ Managers đã quyết (07/10): phương án (b)** — số chính thức giữ nguyên, chạy `src/finetune_fixed.py` làm kết quả phụ.
+
+**✅ Kết quả bản đã sửa bug (Zam, `5356825`, 07/10 04:28) — kiểm tra đạt**: 24/24 dòng, không trùng key, cùng bộ key với bản gốc; log không có `generating this split` (đã đọc đúng `splits/*.json`); loss giảm đều; exit code 0 (dòng `Traceback … triton` là cảnh báo vô hại khi import torch trên Windows).
+
+| Backbone | k | Bản gốc | Bản sửa bug | LP | Sửa bug − gốc | Sửa bug − LP |
+|---|---|---|---|---|---|---|
+| ResNet-50 | 5 | 79.4 ± 2.8 | 71.5 ± 1.0 | 85.6 | −8.0 | −14.1 |
+| ResNet-50 | 10 | 81.6 ± 0.7 | 76.1 ± 3.3 | 89.2 | −5.5 | −13.1 |
+| ResNet-50 | 25 | 86.8 ± 1.0 | 82.3 ± 1.5 | 92.4 | −4.5 | −10.1 |
+| ResNet-50 | all | 92.3 ± 0.6 | 90.7 ± 0.5 | 94.3 | −1.6 | −3.5 |
+| DINOv2 | 5 | 81.9 ± 1.3 | 81.3 ± 3.6 | 88.3 | −0.5 | −6.9 |
+| DINOv2 | 10 | 88.4 ± 0.7 | 85.4 ± 1.1 | 91.5 | −3.0 | −6.1 |
+| DINOv2 | 25 | 91.3 ± 0.2 | 89.0 ± 0.4 | 93.9 | −2.3 | −4.9 |
+| DINOv2 | all | 95.2 ± 0.4 | 94.0 ± 0.6 | 96.2 | −1.1 | −2.2 |
+
+**Kết luận**: sửa bug **không** làm fine-tune tốt lên — bản sửa thấp hơn bản gốc ở mọi k. Vậy số chính thức **không phải lower bound** (bỏ cụm này khỏi slide/report); kết luận RQ2 (FT < LP, DINOv2 > ResNet) đứng vững dù có hay không có bug. Bản sửa đổi 4 thứ cùng lúc (head train ở Stage 2, dùng `splits/*.json`, seed đầy đủ, BatchNorm đóng băng ở Stage 1) nên không quy được mức giảm cho một thay đổi; ở k=all ảnh giống hệt, nên mức giảm ở đó đến từ thay đổi khi train. Cách đọc hợp lý: head tiếp tục train với LR 1e-3 thêm 30 epoch trên ít ảnh → overfit; bug vô tình đóng vai trò regularization. Đây là câu trả lời Q&A tốt.
 
 Lưu ý recipe: `config/finetune_recipe.yaml` trùng y hệt bộ ứng viên trong plan; không có tập validation. Trên slide nói **"recipe cố định, chọn trước, không tune theo k"**.
 
@@ -157,7 +169,7 @@ Tác dụng của `knn_k=5` so với `knn_k=20` (Pets ResNet): k=1 3.0 → 14.9,
 
 So với trước khi đổi V1: hiện tượng "ResNet thắng ở k ≤ 2 trên Pets" **biến mất** (đó là do weights V2); kết luận RQ2 giờ chắc chắn hơn vì frozen và fine-tune cùng điểm xuất phát.
 
-Q&A cần chuẩn bị thêm: bug head Stage 2 (tự nêu trước; Zam có câu trả lời mẫu; nếu kịp, so với kết quả bản đã sửa ở backup slide); vì sao dùng `knn_k=5` thay vì 20 (`knn_k=20` > ½ pool ở k=1/k=2 → gần random; 5 chọn theo pool nhỏ nhất, không theo test); vì sao kNN k=1 vẫn thấp; vì sao fine-tune thua LP; vì sao EuroSAT ResNet thắng ở ít nhãn; test set Pets là gì; vì sao đổi weights ResNet giữa chừng (để frozen và fine-tune cùng điểm xuất phát, đúng plan).
+Q&A cần chuẩn bị thêm: bug head Stage 2 (tự nêu trước, kèm kết quả bản đã sửa: thấp hơn ở mọi k → kết luận không đổi); vì sao dùng `knn_k=5` thay vì 20 (`knn_k=20` > ½ pool ở k=1/k=2 → gần random; 5 chọn theo pool nhỏ nhất, không theo test); vì sao kNN k=1 vẫn thấp; vì sao fine-tune thua LP; vì sao EuroSAT ResNet thắng ở ít nhãn; test set Pets là gì; vì sao đổi weights ResNet giữa chừng (để frozen và fine-tune cùng điểm xuất phát, đúng plan).
 
 ---
 
@@ -231,6 +243,8 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 | 07/10 03:10–03:12 | Thiết: merge `main` vào `thiet`, `63531ca` (vẽ lại `eval_v2_knn5/`), `44e5528` (`scripts/make_plots_knn5.py`) | ❌ Không merge: 2 plot `eval_v2_knn5/` vẽ từ bảng `knn_k=20` (Pets kNN k=2 ≈ 10%, EuroSAT k=1/2 = 11.74%) nhưng chú thích "KNN (k=5)" và đè plot chính thức; script mới mặc định `--input master_table_v2.csv`; script trùng `make_plots.py`; tiêu đề chưa đổi |
 | 07/10 03:15 | Zam chưa push kết quả `finetune_fixed.py` → Manager chuẩn bị chạy dự phòng trên máy WSL (RTX 4060 8 GB) | Không cần: Zam dậy, đang chạy, dự kiến xong ~1 giờ nữa |
 | 07/10 03:26 | Thiết: `42ddbfa` (vẽ lại `eval_v2_knn5/`), `845c1d1` (mặc định `--input master_table_v2_knn5.csv`) | ✅ Số liệu đúng `knn_k=5` (Pets kNN k=2 ≈ 59%, EuroSAT k=1 ≈ 30/25%); merge được. Còn góp ý thẩm mỹ: tiêu đề, nhãn "KNN (k=5)", màu lệch `finetune_vs_frozen.png`, script trùng |
+| 07/10 | Mỹ gửi `related_works.md` bản 2 | 🟡 Dùng được cho slide/report sau khi sửa 4 chỗ nói quá/sai và tự xác nhận Table 15 (Pets trong nguồn LVD-142M) |
+| 07/10 04:28 | Zam (`zam-audit`, `5356825`): chạy `finetune_fixed.py` 24 run | ✅ Đạt kiểm tra. Bản sửa bug thấp hơn bản gốc ở mọi k (−0.5 đến −8.0) → số chính thức không phải lower bound, RQ2 giữ nguyên. Report + README cập nhật |
 
 ---
 
@@ -251,12 +265,14 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 [x] Vẽ lại plots/eval_v2_knn5/ đúng số knn_k=5, style fine-tune (Thiết, `845c1d1`, 07/10)
 [x] plots/finetune_vs_frozen.png slide-ready (Thiết, 07/10)
 [x] Mỹ: ghi chú research ViT + DINOv2 (related_works.md, nhận 07/10)
-[ ] Mỹ: sửa related_works.md (ViT-S/14 không đến từ paper ViT; ViT-S/14 distill từ ViT-g; Pets có trong nguồn LVD-142M? — kiểm tra Table 15; thêm ResNet, DINO v1, LP-FT, Pets/EuroSAT) rồi đưa vào docs/
+[x] Mỹ: related_works.md bản 2 — đã sửa ViT-S, distillation, thêm ResNet / DINO v1 / LP-FT / datasets (07/10)
+[ ] Mỹ: sửa tiếp 4 chỗ (LP-FT nói quá + bug head; DINO kNN là "adapted from"; ResNet = degradation, không phải vanishing gradient; Pets k=1–2 trong 1 std), tự xác nhận Table 15 LVD-142M, thêm danh sách tài liệu tham khảo, rồi đưa vào docs/
 [ ] Draft slide lý thuyết + Q&A (Mỹ) — trễ từ 04/10
 [ ] Slide kết quả #10–#13 + phân tích #14–#16 theo master_table_wide_v2_knn5.csv — 08/10
 [x] Audit fine-tune + loss curves (Zam, 07/10)
 [x] QUYẾT ĐỊNH: bug fine-tune → giữ số chính thức + nêu limitation, chạy finetune_fixed.py làm kết quả phụ (07/10)
-[ ] Zam: results/finetune_grid_fixed.csv 24 dòng + bảng phụ cho backup slide — sáng 08/10
+[x] Zam: results/finetune_grid_fixed.csv 24/24 dòng (`5356825`, 07/10 04:28) — kiểm tra đạt; bảng phụ trong report + README
+[ ] Merge branch zam-audit (kết quả fixed) → main
 [x] Sửa scripts/run_finetune.sh (Zam, 07/10)
 [x] Merge branch zam-audit → main (`20bdae1`, 07/10)
 [x] Chạy lại pytest trên main `76efe23` → 10/10 pass (07/10; Python 3.12, scikit-learn 1.9.1, pandas 2.3.3, numpy 2.5.3)
