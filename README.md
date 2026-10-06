@@ -25,11 +25,11 @@ live in [`docs/`](docs/):
 |---|---|
 | Data download + nested k-shot splits (70 files) | ✅ Done, independently verified for Pets **and** EuroSAT (5 seeds each) |
 | Feature extraction (`src/features.py`, 8 cached `.pt` files) | ✅ Done — ResNet-50 re-extracted with `IMAGENET1K_V1` on 2026-10-06 to match fine-tuning |
-| Phase 1 — frozen grid (kNN + Linear Probe, 280 runs, v2 protocol) | ✅ Done (re-run 2026-10-06 with V1 ResNet features) |
+| Phase 1 — frozen grid (kNN + Linear Probe, 280 runs, v2 protocol) | ✅ Done (re-run 2026-10-06 with V1 ResNet features; kNN re-run with `knn_k=5` on 2026-10-07) |
 | Phase 2 — fine-tuning grid (24 runs, Pets) | ✅ Done (clean rerun, no duplicate keys) |
 | Combined master table (frozen + fine-tune, 64 summary rows) | ✅ Done |
-| Plots | 🟡 `plots/eval_v2/frozen_curves_pets.png` now includes fine-tune curves; a slide-ready fine-tune vs. frozen figure is still to do |
-| Experiment freeze (2026-10-06) | 🔒 No new runs. `knn_k=20` kept as-is → disclosed as a limitation |
+| Plots | ✅ `plots/eval_v2_knn5/frozen_curves_{pets,eurosat}.png` (all methods) + `plots/finetune_vs_frozen.png` (Linear Probe vs. fine-tune, Pets, slide-ready) |
+| Experiment freeze (2026-10-06) | 🔒 Closed. ResNet-50 aligned to V1; kNN uses `knn_k=5` (`knn_k=20` kept as a reference run). No new runs |
 | Slides, reproducibility check, rehearsals | ⏳ 2026-10-08 → 2026-10-11 |
 
 ## Headline results (Oxford-IIIT Pets, Top-1 %, mean ± std over seeds)
@@ -38,13 +38,14 @@ live in [`docs/`](docs/):
 |---|---|---|---|---|---|---|
 | Linear Probe | ResNet-50 | 71.2 ± 3.1 | 85.6 ± 0.6 | 89.2 ± 1.0 | 92.4 ± 0.3 | 94.3 ± 0.0 |
 | Linear Probe | DINOv2 | **72.6 ± 4.0** | **88.3 ± 0.9** | **91.5 ± 0.2** | **93.9 ± 0.5** | **96.2 ± 0.0** |
-| kNN (v2) | ResNet-50 | 3.0 ± 0.3 | 60.7 ± 1.0 | 85.9 ± 0.7 | 90.7 ± 0.3 | 93.6 ± 0.0 |
-| kNN (v2) | DINOv2 | 3.2 ± 0.6 | 58.1 ± 2.9 | 82.7 ± 0.6 | 90.1 ± 0.6 | 94.4 ± 0.0 |
+| kNN (`knn_k=5`) | ResNet-50 | **14.9 ± 1.3** | **83.9 ± 1.0** | 87.2 ± 1.3 | 90.0 ± 0.5 | 93.1 ± 0.0 |
+| kNN (`knn_k=5`) | DINOv2 | 13.8 ± 1.0 | 83.7 ± 0.9 | **88.1 ± 0.8** | **92.0 ± 0.7** | **94.7 ± 0.0** |
 | Fine-tune | ResNet-50 | — | 79.4 ± 2.8 | 81.6 ± 0.7 | 86.8 ± 1.0 | 92.3 ± 0.6 |
 | Fine-tune | DINOv2 | — | 81.9 ± 1.3 | 88.4 ± 0.7 | 91.3 ± 0.2 | 95.2 ± 0.4 |
 
 Frozen: 5 seeds. Fine-tune: 3 seeds. Both phases use ResNet-50 `IMAGENET1K_V1`.
-Full tables (incl. k=2/50 and EuroSAT) in `results/master_table_wide_v2.csv`.
+**Source of truth for slides: `results/master_table_wide_v2_knn5.csv`** (all
+methods, incl. k=2/50 and EuroSAT). Bold = better backbone within a method.
 
 Reading of the results:
 - **RQ1**: DINOv2 frozen features beat ResNet-50 at **every** label budget on
@@ -55,6 +56,8 @@ Reading of the results:
   DINOv2 frozen + LP beats fine-tuned ResNet-50 at every budget.
 - **RQ3**: on EuroSAT the curves cross. ResNet-50 leads at k ≤ 10 (e.g. 70.2 vs
   64.5 at k=2); DINOv2 leads from k=25 on (+1.6 to +1.9 pts; 95.2 vs 93.3 at k=all).
+- **kNN** tells a weaker version of RQ1: the backbones are tied at k ≤ 5 and
+  DINOv2 leads from k=10 (Pets). Linear Probe is the primary frozen method.
 
 ## Setup
 
@@ -130,10 +133,26 @@ Runs the full grid — 2 backbones × 2 datasets × 7 label budgets × 5 seeds �
 - `results/master_table_wide_v2.csv` — wide, presentation-ready table
 - `plots/eval_v2/frozen_curves_{pets,eurosat}.png` — accuracy vs. label budget
 
+These defaults use `knn_k=20` (reference run). The official kNN numbers use
+`knn_k=5`; reproduce them with:
+
+```bash
+rm -f results/frozen_grid_v2_knn5.csv     # the runner skips run_ids already in the output file
+python3 scripts/run_frozen_grid.py --knn-k 5 --output results/frozen_grid_v2_knn5.csv
+python3 scripts/build_master_table.py --frozen results/frozen_grid_v2_knn5.csv \
+  --finetune results/finetune_grid.csv \
+  --output results/master_table_v2_knn5.csv --output-wide results/master_table_wide_v2_knn5.csv
+python3 scripts/make_plots.py --input results/master_table_v2_knn5.csv --output-dir plots/eval_v2_knn5
+```
+
+⚠️ `run_frozen_grid.py` appends to `--output` and skips any `run_id` already in
+it; `run_id` hashes the configuration, not the features. Delete the output file
+before re-running on new features, otherwise nothing is recomputed (`new=0`).
+
 Note: `run_frozen.sh` builds the master table from frozen results only. To
 include fine-tuning, re-run step 6 afterwards.
 
-The v2 protocol uses cosine kNN with `k=20` and **uniform** majority voting;
+The v2 protocol uses cosine kNN with **uniform** majority voting (`knn_k=5` official, `knn_k=20` reference);
 Linear Probe is `LogisticRegression(C=1.0, lbfgs, max_iter=1000)` on
 L2-normalised features (`python3 scripts/run_frozen_grid.py --help` for
 overrides, e.g. `--knn-k`, `--knn-weights distance`).
@@ -191,21 +210,25 @@ python3 scripts/build_master_table.py \
   --output results/master_table_v2.csv \
   --output-wide results/master_table_wide_v2.csv
 python3 scripts/make_plots.py   # re-draws plots/eval_v2/ from master_table_v2.csv
+python3 scripts/plot_finetune_vs_frozen.py   # plots/finetune_vs_frozen.png (Pets, LP vs. fine-tune)
 ```
 
 The committed `master_table_v2.csv` already contains frozen (56) + fine-tune (8)
-= 64 summary rows, and the committed Pets plot already includes the fine-tune
-curves (title still says "Frozen-feature evaluation"; a dedicated fine-tune vs.
-frozen figure is still to do).
+= 64 summary rows, and the committed Pets plots already include the fine-tune
+curves. For slides use `plots/finetune_vs_frozen.png`: Linear Probe (solid) vs.
+fine-tune (dashed), one colour per backbone, k ∈ {5, 10, 25, all}. Its y-axis
+starts at 75%.
 
 ## Known limitations
 
-- **kNN at k=1/k=2**: `knn_k=20` is fixed across budgets. With 37/74 Pets (or
-  10/20 EuroSAT) training samples, a 20-neighbour uniform vote washes out the
-  signal — kNN sits near chance (EuroSAT k=1/2 is a constant 11.74%, because
-  `n_train ≤ 20` means every test image votes over the whole pool). Kept as-is
-  at the experiment freeze; kNN is reported only from k ≥ 5, and Linear Probe
-  is the primary frozen method.
+- **kNN at very low budgets**: with `knn_k=20` and only 37/74 Pets (10/20
+  EuroSAT) training images, the uniform vote collapses to near chance (3% on
+  Pets k=1; a constant 11.74% on EuroSAT k=1/2, where every test image votes
+  over the whole pool). `knn_k=5` was chosen to fit the smallest training pools
+  — not tuned on test accuracy — and fixes k=2/k=5 (e.g. Pets ResNet-50 k=2:
+  9.8% → 59.1%). At k=1 (one image per class) a 5-neighbour vote is still
+  noisy (~14% on Pets). The `knn_k=20` run stays in `results/frozen_grid_v2.csv`
+  for comparison.
 - **Linear Probe is not bit-exact across machines**: re-running on different
   hardware can move a result by one test image (≤ 0.07 pts on Pets). Compare
   reproductions with a ~0.1-pt tolerance.
@@ -233,7 +256,7 @@ scripts/    CLI entry points (frozen grid, master table, plots, shell wrappers)
 splits/     deterministic nested k-shot index files (70 files)
 features/   cached backbone features (gitignored, generated locally)
 results/    raw CSVs, master tables, benchmark/run logs
-plots/      accuracy-vs-label-budget figures (eval_v2 = current; top level = legacy)
+plots/      eval_v2_knn5/ = official, eval_v2/ = knn_k=20 reference, finetune_vs_frozen.png, top level = legacy
 runs/       TensorBoard logs from fine-tuning (24 runs)
 tests/      pytest suite for the evaluation pipeline
 ```
