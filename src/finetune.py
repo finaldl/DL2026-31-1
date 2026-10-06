@@ -22,7 +22,7 @@ from sampler import make_kshot_splits
 
 
 # --- 1. CONFIG LOADER ---
-def load_recipe(recipe_path="config/finetune_config.yaml"):
+def load_recipe(recipe_path="config/finetune_recipe.yaml"):
     """Loads hyperparameter recipe from YAML config."""
     if os.path.exists(recipe_path):
         with open(recipe_path, "r", encoding="utf-8") as f:

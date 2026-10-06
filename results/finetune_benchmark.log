@@ -1,6 +1,6 @@
-Benchmark started: 2026-09-25 06:19:13
+Benchmark started: 2026-09-27 20:09:28
 Script directory: C:\Src
-Run log: benchmark_20260925_061913.log
+Run log: benchmark_20260927_200928.log
 Latest log: benchmark.log
 Reserve log: benchmark_previous.log
 
@@ -41,9 +41,9 @@ Testing ResNet-50 batch size 514...
 Testing ResNet-50 batch size 513...
 
 --- ResNet-50 Stable Maximum ---
-Batch size : 512
-Throughput: 21.66 images/second
-Peak VRAM : 21.67 GB
+Batch size : 513
+Throughput: 15.55 images/second
+Peak VRAM : 21.72 GB
 
 Loading DINOv2 ViT-S/14 via torch.hub...
 
@@ -69,71 +69,14 @@ Testing DINOv2 ViT-S/14 batch size 464...
 Testing DINOv2 ViT-S/14 batch size 456...
 Testing DINOv2 ViT-S/14 batch size 452...
 Testing DINOv2 ViT-S/14 batch size 450...
-Testing DINOv2 ViT-S/14 batch size 449...
+Testing DINOv2 ViT-S/14 batch size 451...
 
-Benchmark failed: OutOfMemoryError: CUDA out of memory. Tried to allocate 338.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 0 bytes is free. Of the allocated memory 20.09 GiB is allocated by PyTorch, and 2.06 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
-Traceback (most recent call last):
-  File "c:\Src\benchmark.py", line 247, in main
-    dino_batch, dino_fps, dino_vram = find_max_batch(
-                                      ^^^^^^^^^^^^^^^
-  File "c:\Src\benchmark.py", line 131, in find_max_batch
-    throughput, peak_vram = benchmark_batch(
-                            ^^^^^^^^^^^^^^^^
-  File "c:\Src\benchmark.py", line 53, in benchmark_batch
-    loss = criterion(model(dummy_inputs), dummy_labels)
-                     ^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "c:\Src\benchmark.py", line 35, in forward
-    features = self.backbone(x)
-               ^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\ASUS/.cache\torch\hub\facebookresearch_dinov2_main\dinov2\models\vision_transformer.py", line 349, in forward
-    ret = self.forward_features(*args, **kwargs)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\ASUS/.cache\torch\hub\facebookresearch_dinov2_main\dinov2\models\vision_transformer.py", line 264, in forward_features
-    x = blk(x)
-        ^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\ASUS/.cache\torch\hub\facebookresearch_dinov2_main\dinov2\layers\block.py", line 310, in forward
-    return super().forward(x_or_x_list)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\ASUS/.cache\torch\hub\facebookresearch_dinov2_main\dinov2\layers\block.py", line 113, in forward
-    x = x + ffn_residual_func(x)
-            ^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\ASUS/.cache\torch\hub\facebookresearch_dinov2_main\dinov2\layers\block.py", line 94, in ffn_residual_func
-    return self.ls2(self.mlp(self.norm2(x)))
-                    ^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\ASUS/.cache\torch\hub\facebookresearch_dinov2_main\dinov2\layers\mlp.py", line 36, in forward
-    x = self.act(x)
-        ^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1779, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\module.py", line 1790, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Src\.conda\Lib\site-packages\torch\nn\modules\activation.py", line 816, in forward
-    return F.gelu(input, approximate=self.approximate)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 338.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 0 bytes is free. Of the allocated memory 20.09 GiB is allocated by PyTorch, and 2.06 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+--- DINOv2 ViT-S/14 Stable Maximum ---
+Batch size : 451
+Throughput: 16.79 images/second
+Peak VRAM : 21.24 GB
+
+--- BENCHMARK SUMMARY (PyTorch AMP, 224x224, training step) ---
+ResNet-50       : batch 513 | 15.55 img/s | Peak VRAM: 21.72 GB
+DINOv2 ViT-S/14 : batch 451 | 16.79 img/s | Peak VRAM: 21.24 GB
+Benchmark completed successfully. Run log: C:\Src\benchmark_20260927_200928.log

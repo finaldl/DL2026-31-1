@@ -7,3 +7,6 @@ features/
 # local-only planning docs, kept on machine but not pushed to git
 /PROJECT_PLAN.md
 /WORKFLOW.md
+.venv/
+features_old_v2/
+results_old_v2weights/
