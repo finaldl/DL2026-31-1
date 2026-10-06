@@ -4,14 +4,6 @@ from datasets import load_dataset
 pets = load_dataset("pcuenq/oxford-pets")
 print(pets)
 
-# Kiểm tra số lớp (label) — phải ra 37
-labels = pets["train"].unique("label")
-print("Số lớp:", len(labels))
-from datasets import load_dataset
-
-pets = load_dataset("pcuenq/oxford-pets")
-print(pets)
-
 labels = pets["train"].unique("label")
 print("Số lớp:", len(labels))
 

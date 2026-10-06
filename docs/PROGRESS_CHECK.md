@@ -18,13 +18,13 @@
 
 | Ai | Việc cần làm | Hạn | Chi tiết |
 |---|---|---|---|
-| **Thiết** | `make_plots.py` đã có style fine-tune (`f5b57c1`). Còn thiếu: **`git fetch` rồi merge `origin/main`** (branch `thiet` chưa có các file `knn_k=5`), đổi tiêu đề + nhãn chú thích, vẽ vào `plots/eval_v2_knn5/` từ `master_table_v2_knn5.csv`, thống nhất màu với `finetune_vs_frozen.png` | 🟡 T5 08/10 | Mục 2.2 |
+| **Thiết** | (Tùy chọn, thẩm mỹ) Tiêu đề plot → "Accuracy vs label budget", nhãn "KNN (k=5)" → "kNN (5 neighbours)", thống nhất màu với `finetune_vs_frozen.png` | 🟢 Thấp | Mục 2.2 |
 | **Thiết** | (Tùy chọn) Chỉnh nhỏ `scripts/plot_finetune_vs_frozen.py`: đọc `master_table_v2_knn5.csv`, tiêu đề ghi "LP: 5 seeds · Fine-tune: 3 seeds", ghi chú trục y bắt đầu từ 75% | 🟢 Thấp | Mục 2.2 |
 | **Mỹ** | Đưa draft slide lý thuyết #4–#8 + Q&A cheat sheet lên repo/drive chung | 🔴 **Trễ** (hạn CN 4/10) | Mục 1 |
 | **Đức** | Slide kết quả #10–#13, lấy số từ **`master_table_wide_v2_knn5.csv`**, plot từ `plots/eval_v2_knn5/`. Không dùng `KET_QUA_DOC_BAO.md` (legacy) hay các file `_knn5` của commit `af699c1` (ResNet V2) | 🟡 T5 08/10 | Mục 3 |
 | **Managers** | Viết slide #14–#16 (phân tích, limitations, kết luận) theo số V1 — xem bảng câu chuyện ở mục 3 | 🟡 T5 08/10 | Mục 3 |
-| **Zam** | **Đang chạy** `src/finetune_fixed.py --grid` (Managers chọn phương án (b), 07/10) → `results/finetune_grid_fixed.csv` 24 dòng + `runs_fixed/`; push kèm log. Chỉ dùng cho **backup slide**, ghi "post-freeze, bug-fixed" | 🔴 Sáng T5 08/10 | Mục 2.1 |
-| **Đức** | Cho biết `splits/*.json` được sinh bằng code nào (không khớp `src/sampler.py`) và commit code/notebook đó; nếu không còn → ghi limitation | 🟡 T6 09/10 | Mục 2.4 |
+| **Zam** | **Đang chạy** `src/finetune_fixed.py --grid` (Managers chọn phương án (b), 07/10; dự kiến xong khoảng 1 giờ nữa) → `results/finetune_grid_fixed.csv` 24 dòng + `runs_fixed/`; push kèm log. Chỉ dùng cho **backup slide**, ghi "post-freeze, bug-fixed" | 🔴 Sáng T5 08/10 | Mục 2.1 |
+| **Đức** (không bắt buộc) | Nếu còn nhớ: cho biết `splits/*.json` được sinh bằng code nào. Không còn chặn việc gì — splits đã được coi là dữ liệu cố định, kiểm tra bằng `scripts/verify_splits.py` | 🟢 Thấp | Mục 2.4 |
 | **Thiết (+ Thu)** | Reproducibility check trên máy khác — dùng `features.zip` mới trên Drive, so với sai số ~0.1 điểm (mục 2.5) | 🟡 T6 09/10 | Mục 2.5 |
 | **Managers + Đức** | Thêm vào slide limitations: bug head Stage 2, fine-tune và frozen dùng ảnh k-shot khác nhau ở k ≤ 25 (so sánh theo mean) | 🟡 T5 08/10 | Mục 2.1, 2.4 |
 
@@ -99,7 +99,7 @@ Zam kiểm tra (có `data/`): ảnh k-shot mà `finetune.py` tự sinh bằng `m
 Hệ quả:
 - Không có leakage, không sai: cả hai đều là cách chọn ngẫu nhiên hợp lệ (đúng k ảnh/lớp, từ trainval) — splits JSON đã được verify độc lập (mục 4.3).
 - So sánh FT vs LP ở k ≤ 25 là so **mean** của các bộ ảnh ngẫu nhiên khác nhau, không phải so theo cặp seed. Ghi một dòng trên slide limitations.
-- Repro check: `splits/` không sinh lại được từ code trong repo → cần Đức cho biết / commit code đã sinh ra chúng.
+- Repro check: `splits/` không sinh lại được từ code → coi là **dữ liệu cố định đã commit**, kiểm tra bằng `python3 scripts/verify_splits.py` (07/10: đạt cả 70 file; thêm `--features-dir features` để kiểm số ảnh mỗi lớp — chưa chạy vì máy Manager không có `features/`).
 
 ### 🟡 2.5 Reproducibility: Linear Probe không khớp tuyệt đối giữa các máy
 
@@ -198,7 +198,7 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 
 ### 4.5 Test
 
-`pytest tests/` → 10/10 pass (29–30/9). Code eval không đổi kể từ đó (Thu chỉ đổi `features.py` + kết quả, Đức chỉ thêm kết quả). Môi trường Manager chưa cài `pytest` nên không chạy lại 06–07/10.
+`pytest tests/` → 10/10 pass (29–30/9). Code eval không đổi kể từ đó (Thu chỉ đổi `features.py` + kết quả, Đức chỉ thêm kết quả). Chạy lại 07/10 trên `main` `76efe23` (sau mọi merge, venv riêng theo `requirements.txt`): **10/10 pass**.
 
 ---
 
@@ -224,6 +224,13 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 | 07/10 01:14–01:21 | Thiết: `72b57dc`, `f5b57c1` — commit `make_plots.py` có style fine-tune (đổi sang màu Okabe-Ito), vẽ lại `plots/eval_v2/` | 🟡 Tiến bộ nhưng chưa merge: branch chưa lấy `main` mới (không có file `knn_k=5`), vẫn vẽ bảng `knn_k=20`, tiêu đề chưa đổi, màu lệch `finetune_vs_frozen.png` |
 | 07/10 01:17 | Zam xóa `docs/ZAM_FINETUNE_EXPLAINED.md` khỏi `zam-audit` (`e145e93`) | Tài liệu giữ riêng; docs bỏ tham chiếu |
 | 07/10 | Managers chọn phương án (b): Zam chạy `finetune_fixed.py` ngay | ⏳ Đang chạy |
+| 07/10 | Manager merge `zam-audit` → `main` (`20bdae1`), commit docs (`76efe23`) | ✅ |
+| 07/10 | Manager chạy `pytest tests/` trên `76efe23` | ✅ 10/10 pass |
+| 07/10 | Mỹ gửi `related_works.md` (ViT, DINOv2) | 🟡 Dùng được cho slide #5–#7; cần sửa 1 lỗi (nguồn gốc ViT-S/14), bổ sung distillation, kiểm tra Pets trong LVD-142M, thêm ResNet / DINO v1 / LP-FT / dataset |
+| 07/10 | Manager: thêm `scripts/verify_splits.py` (70/70 file đạt, bắt được lỗi khi thử splits hỏng); soạn bản nháp Results & Limitations cho report | ✅ |
+| 07/10 03:10–03:12 | Thiết: merge `main` vào `thiet`, `63531ca` (vẽ lại `eval_v2_knn5/`), `44e5528` (`scripts/make_plots_knn5.py`) | ❌ Không merge: 2 plot `eval_v2_knn5/` vẽ từ bảng `knn_k=20` (Pets kNN k=2 ≈ 10%, EuroSAT k=1/2 = 11.74%) nhưng chú thích "KNN (k=5)" và đè plot chính thức; script mới mặc định `--input master_table_v2.csv`; script trùng `make_plots.py`; tiêu đề chưa đổi |
+| 07/10 03:15 | Zam chưa push kết quả `finetune_fixed.py` → Manager chuẩn bị chạy dự phòng trên máy WSL (RTX 4060 8 GB) | Không cần: Zam dậy, đang chạy, dự kiến xong ~1 giờ nữa |
+| 07/10 03:26 | Thiết: `42ddbfa` (vẽ lại `eval_v2_knn5/`), `845c1d1` (mặc định `--input master_table_v2_knn5.csv`) | ✅ Số liệu đúng `knn_k=5` (Pets kNN k=2 ≈ 59%, EuroSAT k=1 ≈ 30/25%); merge được. Còn góp ý thẩm mỹ: tiêu đề, nhãn "KNN (k=5)", màu lệch `finetune_vs_frozen.png`, script trùng |
 
 ---
 
@@ -241,17 +248,25 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 [x] Merge branch thu → main
 [x] Kiểm tra lần chạy knn_k=5 của Đức theo từng dòng
 [x] Merge branch leanhduc + thiet → main (`5ac1e5a`, 07/10)
-[ ] make_plots.py: style fine-tune + vẽ lại plots/eval_v2_knn5/ (Thiết, mục 2.2)
+[x] Vẽ lại plots/eval_v2_knn5/ đúng số knn_k=5, style fine-tune (Thiết, `845c1d1`, 07/10)
 [x] plots/finetune_vs_frozen.png slide-ready (Thiết, 07/10)
+[x] Mỹ: ghi chú research ViT + DINOv2 (related_works.md, nhận 07/10)
+[ ] Mỹ: sửa related_works.md (ViT-S/14 không đến từ paper ViT; ViT-S/14 distill từ ViT-g; Pets có trong nguồn LVD-142M? — kiểm tra Table 15; thêm ResNet, DINO v1, LP-FT, Pets/EuroSAT) rồi đưa vào docs/
 [ ] Draft slide lý thuyết + Q&A (Mỹ) — trễ từ 04/10
 [ ] Slide kết quả #10–#13 + phân tích #14–#16 theo master_table_wide_v2_knn5.csv — 08/10
 [x] Audit fine-tune + loss curves (Zam, 07/10)
 [x] QUYẾT ĐỊNH: bug fine-tune → giữ số chính thức + nêu limitation, chạy finetune_fixed.py làm kết quả phụ (07/10)
 [ ] Zam: results/finetune_grid_fixed.csv 24 dòng + bảng phụ cho backup slide — sáng 08/10
 [x] Sửa scripts/run_finetune.sh (Zam, 07/10)
-[ ] Merge branch zam-audit → main
+[x] Merge branch zam-audit → main (`20bdae1`, 07/10)
+[x] Chạy lại pytest trên main `76efe23` → 10/10 pass (07/10; Python 3.12, scikit-learn 1.9.1, pandas 2.3.3, numpy 2.5.3)
+[ ] Kiểm tra nội dung features.zip (8 file, đúng shape) — làm trong repro check
+[x] Stretch goals (ViT-S supervised, CLIP) — bỏ theo Experiment Freeze
 [ ] Reproducibility check, sai số ~0.1 điểm (mục 2.5) — 09/10
 [x] Verify split fine-tune vs splits/*.json → KHÁC (~3% trùng ở k ≤ 25), Zam kiểm tra (mục 2.4)
-[ ] Đức: nguồn gốc / code sinh splits/*.json (mục 2.4)
-[ ] Bổ sung pytest, tensorboard vào requirements.txt
+[x] scripts/verify_splits.py — 70/70 file đạt (07/10); splits coi là dữ liệu cố định
+[ ] (Không bắt buộc) Đức: nguồn gốc code sinh splits/*.json
+[ ] Repro check chạy thêm `verify_splits.py --features-dir features` (kiểm số ảnh mỗi lớp)
+[x] Bản nháp phần Results & Limitations của report (Claude Docs, 07/10) — chờ thêm kết quả fine-tune đã sửa bug
+[x] Bổ sung pytest, tensorboard vào requirements.txt (07/10)
 ```

@@ -97,7 +97,8 @@ python src/download_eurosat.py    # EuroSAT (HF tanganke/eurosat)          → d
 
 `splits/{dataset}_seed{seed}_k{budget}.json` are deterministic, nested k-shot
 index lists (k=1 ⊂ k=2 ⊂ ... ⊂ k=all) into each dataset's train(val) split.
-Already generated and committed (70 files: 2 datasets × 5 seeds × 7 budgets).
+Committed as fixed artifacts (70 files: 2 datasets × 5 seeds × 7 budgets);
+verify them with `python3 scripts/verify_splits.py`.
 
 ### 3. Feature extraction
 
@@ -145,7 +146,7 @@ python3 scripts/run_frozen_grid.py --knn-k 5 --output results/frozen_grid_v2_knn
 python3 scripts/build_master_table.py --frozen results/frozen_grid_v2_knn5.csv \
   --finetune results/finetune_grid.csv \
   --output results/master_table_v2_knn5.csv --output-wide results/master_table_wide_v2_knn5.csv
-python3 scripts/make_plots.py --input results/master_table_v2_knn5.csv --output-dir plots/eval_v2_knn5
+python3 scripts/make_plots_knn5.py   # official plots/eval_v2_knn5/ (defaults: master_table_v2_knn5.csv)
 ```
 
 ⚠️ `run_frozen_grid.py` appends to `--output` and skips any `run_id` already in
@@ -261,9 +262,12 @@ starts at 75%.
   grid reads `splits/*.json`; the two overlap only ~3% at k=5 (chance level).
   Both are valid stratified draws from trainval with no test leakage, so
   compare means, not paired seeds. k=all is identical.
-- **`splits/*.json` are not reproducible from the repo**: they were committed
-  with the evaluation pipeline (`87ed900`) and do not match `src/sampler.py`
-  output; the generating code is not committed.
+- **`splits/*.json` are fixed artifacts**: they were committed with the
+  evaluation pipeline (`87ed900`) and cannot be regenerated from
+  `src/sampler.py`. Their validity is checked instead:
+  `python3 scripts/verify_splits.py` (nested, k images per class, no duplicates,
+  k=all = range(N) so no test indices; add `--features-dir features` to also
+  check per-class counts against the cached labels).
 - **Fine-tune recipe** equals the plan's initial candidates; there is no
   validation split in `finetune.py`, so no tuning at k=10/25 is recorded.
 - **Pets test set** is a random stratified 20% of the HF train split, not the
