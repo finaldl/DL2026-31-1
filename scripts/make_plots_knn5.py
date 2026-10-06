@@ -28,7 +28,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--input",
-        default="results/master_table_v2.csv",
+        default="results/master_table_v2_knn5.csv",
     )
     parser.add_argument(
         "--output-dir",
