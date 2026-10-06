@@ -29,6 +29,7 @@ live in [`docs/`](docs/):
 | Phase 2 — fine-tuning grid (24 runs, Pets) | ✅ Done (clean rerun, no duplicate keys) |
 | Combined master table (frozen + fine-tune, 64 summary rows) | ✅ Done |
 | Plots | ✅ `plots/eval_v2_knn5/frozen_curves_{pets,eurosat}.png` (all methods) + `plots/finetune_vs_frozen.png` (Linear Probe vs. fine-tune, Pets, slide-ready) |
+| Fine-tuning audit | ✅ Loss curves; found a Stage-2 head bug (official numbers kept, read as lower bound); `run_finetune.sh` fixed. Bug-fixed grid (`src/finetune_fixed.py`) running 2026-10-07 as a post-freeze supplementary result |
 | Experiment freeze (2026-10-06) | 🔒 Closed. ResNet-50 aligned to V1; kNN uses `knn_k=5` (`knn_k=20` kept as a reference run). No new runs |
 | Slides, reproducibility check, rehearsals | ⏳ 2026-10-08 → 2026-10-11 |
 
@@ -53,6 +54,8 @@ Reading of the results:
 - **RQ2**: with the fixed recipe, fine-tuning never beats a Linear Probe on the
   same backbone. The gap shrinks as labels grow: ResNet-50 −6.1 / −7.5 / −5.6 /
   −1.9 pts, DINOv2 −6.4 / −3.1 / −2.6 / −1.0 pts at k = 5 / 10 / 25 / all.
+  Because of the Stage-2 head bug (see limitations) these fine-tune numbers
+  are a lower bound.
   DINOv2 frozen + LP beats fine-tuned ResNet-50 at every budget.
 - **RQ3**: on EuroSAT the curves cross. ResNet-50 leads at k ≤ 10 (e.g. 70.2 vs
   64.5 at k=2); DINOv2 leads from k=25 on (+1.6 to +1.9 pts; 95.2 vs 93.3 at k=all).
@@ -194,12 +197,24 @@ leaking validation information into the low-label regime):
 Output: one row appended per run to `results/finetune_grid.csv` (delete it
 first for a clean rerun), TensorBoard loss curves under `runs/`. The k-shot
 indices are regenerated at runtime with `src/sampler.make_kshot_splits` rather
-than read from `splits/`. Memory benchmark (RTX 4060, AMP):
-`results/finetune_benchmark.log`.
+than read from `splits/` — see [Known limitations](#known-limitations). Memory
+benchmark (RTX 4060, AMP): `results/finetune_benchmark.log`. One-command
+reproduction (deletes the old CSV first, ~3 h on an RTX 4060):
 
-⚠️ `scripts/run_finetune.sh` is currently broken (prints "completed" before
-running, and calls `finetune.py` from the wrong directory). Use the commands
-above until it is fixed.
+```bash
+bash scripts/run_finetune.sh
+```
+
+Fine-tuning audit (Zam, 2026-10-07): training-loss figure
+`plots/finetune_loss_curves.png` (`python scripts/plot_finetune_losses.py`,
+needs `tensorboard`); findings are summarised in `docs/PROGRESS_CHECK.md`. The audit found
+a bug in `src/finetune.py` (see limitations). `src/finetune.py` is kept unchanged
+because it produced the official numbers; `src/finetune_fixed.py` is the same
+pipeline with the bugs fixed (head trained in Stage 2, reads `splits/*.json`,
+seeds everything, BatchNorm frozen in Stage 1). It writes to
+`results/finetune_grid_fixed.csv` / `runs_fixed/`. The Managers approved one
+post-freeze run of it (2026-10-07) as a **supplementary** result for a backup
+slide; the official fine-tune numbers stay those of `src/finetune.py`.
 
 ### 6. Combined master table + plots
 
@@ -211,6 +226,7 @@ python3 scripts/build_master_table.py \
   --output-wide results/master_table_wide_v2.csv
 python3 scripts/make_plots.py   # re-draws plots/eval_v2/ from master_table_v2.csv
 python3 scripts/plot_finetune_vs_frozen.py   # plots/finetune_vs_frozen.png (Pets, LP vs. fine-tune)
+python3 scripts/plot_finetune_losses.py       # plots/finetune_loss_curves.png (from runs/ TensorBoard logs)
 ```
 
 The committed `master_table_v2.csv` already contains frozen (56) + fine-tune (8)
@@ -232,6 +248,22 @@ starts at 75%.
 - **Linear Probe is not bit-exact across machines**: re-running on different
   hardware can move a result by one test image (≤ 0.07 pts on Pets). Compare
   reproductions with a ~0.1-pt tolerance.
+- **Fine-tuning bug — the head is not trained in Stage 2**: `build_model()`
+  returns the head parameters as a generator; the Stage-1 optimizer consumes
+  it, so the Stage-2 head parameter group is empty (PyTorch does not raise).
+  During Stage 2 only the backbone trains, toward a head frozen at its
+  10-epoch Stage-1 values. Found in the post-freeze audit; the official
+  fine-tune numbers are kept and should be read as a **lower bound**. Fixed in
+  `src/finetune_fixed.py`; its results are reported separately as a
+  post-freeze, bug-fixed supplement.
+- **Fine-tune and frozen use different k-shot images at k ≤ 25**:
+  `finetune.py` re-samples at runtime with `src/sampler.py`, while the frozen
+  grid reads `splits/*.json`; the two overlap only ~3% at k=5 (chance level).
+  Both are valid stratified draws from trainval with no test leakage, so
+  compare means, not paired seeds. k=all is identical.
+- **`splits/*.json` are not reproducible from the repo**: they were committed
+  with the evaluation pipeline (`87ed900`) and do not match `src/sampler.py`
+  output; the generating code is not committed.
 - **Fine-tune recipe** equals the plan's initial candidates; there is no
   validation split in `finetune.py`, so no tuning at k=10/25 is recorded.
 - **Pets test set** is a random stratified 20% of the HF train split, not the
@@ -250,7 +282,7 @@ python -m pytest tests/
 
 ```
 config/     dataset paths, label budgets, seeds, locked fine-tune recipe
-docs/       project plan, task explainer, progress/audit log
+docs/       progress/audit log (plan and task explainer are local-only)
 src/        data download, sampler, feature extraction, frozen eval, fine-tuning, metrics
 scripts/    CLI entry points (frozen grid, master table, plots, shell wrappers)
 splits/     deterministic nested k-shot index files (70 files)

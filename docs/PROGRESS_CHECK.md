@@ -1,6 +1,6 @@
 # 🔍 Báo cáo tiến độ & Checklist Double-Check
 
-> Người soạn: Manager (qua Claude Code) — **cập nhật 07/10/2026**, sau khi Thu push branch `thu` (`8762440`, `3aec714`), Đức push branch `leanhduc` (`d754f89`, kNN `knn_k=5`) và Thiết push branch `thiet` (`d908fb5`, plot fine-tune vs frozen).
+> Người soạn: Manager (qua Claude Code) — **cập nhật 07/10/2026**, sau khi kiểm tra các push: Thu (`thu`: `8762440`, `3aec714`), Đức (`leanhduc`: `d754f89`, kNN `knn_k=5`), Thiết (`thiet`: `d908fb5`, `cb09506`) và Zam (`zam-audit`: `a7973cd`, audit fine-tune).
 > Mục đích: ghi lại những gì đã kiểm tra, kết quả, và những việc **còn mở** trước khi đưa số liệu lên slide.
 > Đối chiếu với: [`PROJECT_PLAN.md`](PROJECT_PLAN.md), [`project_analysis.md`](project_analysis.md), [`../README.md`](../README.md).
 
@@ -18,17 +18,17 @@
 
 | Ai | Việc cần làm | Hạn | Chi tiết |
 |---|---|---|---|
-| **Manager (người giữ repo)** | Merge `leanhduc` (fast-forward) + `thiet` → `main`, commit README/PROGRESS_CHECK | 🔴 Ngay | — |
+| **Thiết** | `make_plots.py` đã có style fine-tune (`f5b57c1`). Còn thiếu: **`git fetch` rồi merge `origin/main`** (branch `thiet` chưa có các file `knn_k=5`), đổi tiêu đề + nhãn chú thích, vẽ vào `plots/eval_v2_knn5/` từ `master_table_v2_knn5.csv`, thống nhất màu với `finetune_vs_frozen.png` | 🟡 T5 08/10 | Mục 2.2 |
 | **Thiết** | (Tùy chọn) Chỉnh nhỏ `scripts/plot_finetune_vs_frozen.py`: đọc `master_table_v2_knn5.csv`, tiêu đề ghi "LP: 5 seeds · Fine-tune: 3 seeds", ghi chú trục y bắt đầu từ 75% | 🟢 Thấp | Mục 2.2 |
 | **Mỹ** | Đưa draft slide lý thuyết #4–#8 + Q&A cheat sheet lên repo/drive chung | 🔴 **Trễ** (hạn CN 4/10) | Mục 1 |
 | **Đức** | Slide kết quả #10–#13, lấy số từ **`master_table_wide_v2_knn5.csv`**, plot từ `plots/eval_v2_knn5/`. Không dùng `KET_QUA_DOC_BAO.md` (legacy) hay các file `_knn5` của commit `af699c1` (ResNet V2) | 🟡 T5 08/10 | Mục 3 |
 | **Managers** | Viết slide #14–#16 (phân tích, limitations, kết luận) theo số V1 — xem bảng câu chuyện ở mục 3 | 🟡 T5 08/10 | Mục 3 |
-| **Zam** | Audit fine-tune (TensorBoard `runs/`), chuẩn bị câu trả lời "vì sao fine-tune thua Linear Probe" | 🟡 T5 08/10 | Mục 2.1 |
-| **Zam** | Sửa `scripts/run_finetune.sh` | 🟡 T6 09/10 | Mục 2.3 |
+| **Zam** | **Đang chạy** `src/finetune_fixed.py --grid` (Managers chọn phương án (b), 07/10) → `results/finetune_grid_fixed.csv` 24 dòng + `runs_fixed/`; push kèm log. Chỉ dùng cho **backup slide**, ghi "post-freeze, bug-fixed" | 🔴 Sáng T5 08/10 | Mục 2.1 |
+| **Đức** | Cho biết `splits/*.json` được sinh bằng code nào (không khớp `src/sampler.py`) và commit code/notebook đó; nếu không còn → ghi limitation | 🟡 T6 09/10 | Mục 2.4 |
 | **Thiết (+ Thu)** | Reproducibility check trên máy khác — dùng `features.zip` mới trên Drive, so với sai số ~0.1 điểm (mục 2.5) | 🟡 T6 09/10 | Mục 2.5 |
-| **Thu hoặc Zam** | Xác nhận split lúc fine-tune == `splits/pets_seed*_k*.json` | 🟢 Thấp | Mục 2.4 |
+| **Managers + Đức** | Thêm vào slide limitations: bug head Stage 2, fine-tune và frozen dùng ảnh k-shot khác nhau ở k ≤ 25 (so sánh theo mean) | 🟡 T5 08/10 | Mục 2.1, 2.4 |
 
-**Đã xong, không cần nhắc nữa**: splits 70 file (verify độc lập Pets + EuroSAT), feature 8 file `.pt` (ResNet bản V1), code eval + 10 test, frozen grid v2 (280/280, chạy lại 06/10), kNN `knn_k=5` (280/280, 07/10), fine-tune grid sạch (24/24), master table gộp (64 dòng), memory benchmark, **thống nhất ResNet-50 weights V1**, **chốt `knn_k=5`**, **plot fine-tune vs frozen**.
+**Đã xong, không cần nhắc nữa**: splits 70 file (verify độc lập Pets + EuroSAT), feature 8 file `.pt` (ResNet bản V1), code eval + 10 test, frozen grid v2 (280/280, chạy lại 06/10), kNN `knn_k=5` (280/280, 07/10), fine-tune grid sạch (24/24), master table gộp (64 dòng), memory benchmark, **thống nhất ResNet-50 weights V1**, **chốt `knn_k=5`**, **plot fine-tune vs frozen**, **audit fine-tune + sửa `run_finetune.sh`** (Zam), **quyết định về bug fine-tune** (phương án b).
 
 ---
 
@@ -45,16 +45,18 @@
 | Draft slides lý thuyết (Mỹ) | CN 4/10 | 🔴 **Trễ** — chưa thấy | Managers hỏi trực tiếp |
 | 🔒 Experiment Freeze | T3 6/10 | 🟢 **Đã chốt** | Xem đầu file |
 | Slide hoàn thành | T5 8/10 | ⏳ Còn 2 ngày | Chưa có thư mục `slides/` |
-| Reproducibility check | T6 9/10 | 🟡 Có rủi ro | `run_finetune.sh` vẫn hỏng |
+| Reproducibility check | T6 9/10 | 🟡 Có rủi ro | `run_finetune.sh` đã sửa (Zam); `splits/*.json` không tái tạo được từ `src/sampler.py` (mục 2.4) |
 | 2 buổi diễn tập | T7–CN 10–11/10 | ⏳ | |
 
 ---
 
 ## 2. ⚠️ Việc còn mở
 
-### 🟡 2.1 Audit fine-tuning (để có câu trả lời Q&A)
+### 🔴 2.1 Audit fine-tuning — XONG (Zam, `a7973cd`), phát hiện bug
 
-Pets, Top-1 %, fine-tune 3 seed, LP 5 seed, **cả hai cùng ResNet V1**:
+Zam đã audit xong: tài liệu giải thích phần fine-tune + Q&A (Zam giữ bản riêng; đã đưa lên `zam-audit` rồi xóa ở `e145e93`), hình `plots/finetune_loss_curves.png` (backup slide B2, sinh bằng `scripts/plot_finetune_losses.py` từ log TensorBoard `runs/`). Loss giảm đều ở cả 2 stage, không NaN, không phân kỳ.
+
+Pets, Top-1 %, fine-tune 3 seed, LP 5 seed, cả hai cùng ResNet V1:
 
 | k | FT ResNet-50 | LP ResNet-50 | Δ | FT DINOv2 | LP DINOv2 | Δ |
 |---|---|---|---|---|---|---|
@@ -63,32 +65,41 @@ Pets, Top-1 %, fine-tune 3 seed, LP 5 seed, **cả hai cùng ResNet V1**:
 | 25 | 86.8 ± 1.0 | 92.4 | −5.6 | 91.3 ± 0.2 | 93.9 | −2.6 |
 | all | 92.3 ± 0.6 | 94.3 | −1.9 | 95.2 ± 0.4 | 96.2 | −1.0 |
 
-Fine-tune thua LP ở mọi k, kể cả khi đã cùng weights → đây là kết quả thật của setup này, không còn do lệch V1/V2. Giả thuyết cần chuẩn bị để trả lời:
-- Stage 1 (10 epoch train head trên backbone đóng băng) ≈ một linear probe yếu hơn (ít epoch, có augment) → Stage 2 với ít ảnh dễ overfit / phá feature tốt sẵn có.
-- `RandomResizedCrop(224)` mặc định `scale=(0.08, 1)` khá mạnh với ít dữ liệu.
-- Recipe chưa từng được tune: `config/finetune_recipe.yaml` **trùng y hệt** bộ ứng viên trong plan; `finetune.py` không có tập validation. Trên slide nói **"recipe cố định, chọn trước, không tune theo k"**.
+**🐛 Bug (Manager đã đối chiếu code, xác nhận)**: trong `src/finetune.py`, `build_model()` trả head params dưới dạng **generator** (`model.fc.parameters()` / `model.head.parameters()`). `opt1 = AdamW(head_params, ...)` ở Stage 1 đọc hết generator → ở Stage 2, `{'params': head_params}` là **nhóm rỗng** (PyTorch không báo lỗi vì nhóm backbone không rỗng). Nghĩa là trong 30 epoch Stage 2 **chỉ backbone được train**, head đứng yên ở giá trị sau 10 epoch Stage 1. Hệ quả: số fine-tune chính thức là **lower bound**; một phần lý do "FT < LP ở mọi k" có thể đến từ bug này. Chiều hướng (khoảng cách thu hẹp khi tăng nhãn, DINOv2 > ResNet) không đổi.
 
-Gợi ý cho Zam: mở TensorBoard `runs/` xem loss Stage 1/Stage 2 giảm đều, không NaN — chụp 1 hình cho backup slide B2.
+Các phát hiện khác của Zam (đã sửa trong `src/finetune_fixed.py`, **chưa chạy**, ghi ra `results/finetune_grid_fixed.csv` + `runs_fixed/`, không đụng số chính thức):
+- Chỉ seed việc chọn ảnh; khởi tạo head, thứ tự batch, augmentation không seed → chạy lại lệch cỡ std (1–3 điểm ở k=5).
+- Stage 1 gọi `model.train()` → BatchNorm của ResNet vẫn cập nhật running stats dù backbone "đóng băng".
+- Dùng ảnh k-shot khác với frozen grid (mục 2.4).
+- Recipe giữ nguyên (không tune) — đúng tinh thần freeze.
+
+**✅ Managers đã quyết (07/10): phương án (b)**:
+- Số fine-tune chính thức **giữ nguyên** (`results/finetune_grid.csv`, từ `src/finetune.py`), trình bày là *lower bound*; tự nêu bug trên slide limitations và trong Q&A.
+- Zam chạy **ngay** `src/finetune_fixed.py --grid` (~3 giờ, RTX 4060) → `results/finetune_grid_fixed.csv` + `runs_fixed/`. Đây là ngoại lệ có chủ đích sau freeze (sửa bug, không đổi recipe); kết quả chỉ lên **backup slide**, ghi rõ "post-freeze, bug-fixed", so sánh với bản gốc theo từng k.
+- Khi Zam push: Manager kiểm tra 24/24 dòng, không trùng key, đúng ảnh `splits/*.json`, rồi build bảng phụ bằng `build_master_table.py --finetune results/finetune_grid_fixed.csv` (output riêng, **không ghi đè** `master_table_v2_knn5.csv`).
+
+Lưu ý recipe: `config/finetune_recipe.yaml` trùng y hệt bộ ứng viên trong plan; không có tập validation. Trên slide nói **"recipe cố định, chọn trước, không tune theo k"**.
 
 ### 🟢 2.2 Biểu đồ
 
 - `plots/eval_v2_knn5/frozen_curves_pets.png` (bản chính thức, Đức vẽ 07/10; `plots/eval_v2/` là bản `knn_k=20`) **đã có** 2 đường fine-tune, nhưng chưa dùng được trên slide: 6 đường trong một hình, fine-tune DINOv2 dùng màu xanh giống ResNet (không có style riêng trong `make_plots.py`), tiêu đề "Frozen-feature evaluation".
 - ✅ **`plots/finetune_vs_frozen.png`** (Thiết, `d908fb5`, 07/10 00:08) + script `scripts/plot_finetune_vs_frozen.py` — **dùng cho slide RQ2**. Đã kiểm tra: chỉ LP vs fine-tune trên Pets, k ∈ {5, 10, 25, all}; ResNet xanh / DINOv2 đỏ (cùng màu với `eval_v2_knn5`), nét liền = LP, nét đứt = fine-tune, có error bar, DPI 200. Cả 16 điểm (mean + std) khớp bảng; Pets không lệch ô nào giữa `master_table_v2.csv` (script đang đọc) và `master_table_v2_knn5.csv`. Chưa chạy lại được script ở máy Manager (thiếu pandas/matplotlib).
+- **Vẽ lại 2 plot `eval_v2_knn5/` (Thiết đề xuất 07/10, đã duyệt)**: hai file này do `scripts/make_plots.py` sinh ra, nên muốn đổi hình thì **sửa script rồi chạy lại**, không chép đè PNG vẽ bằng code khác — nếu không, lần chạy `run_frozen.sh`/`make_plots.py` kế tiếp (VD repro check 09/10) sẽ ghi đè lại bản cũ, và hình trên slide không tái tạo được. Cần sửa: thêm `STYLE` cho `finetune` (cùng màu backbone, marker tam giác, nét chấm-gạch), tiêu đề không còn ghi "Frozen-feature", nhãn chú thích dễ đọc. Giữ nguyên tên file và tham số `--input/--output-dir`.
 - Góp ý nhỏ (tùy chọn): đổi `INPUT` sang `master_table_v2_knn5.csv` cho đúng quy ước một nguồn số (hình không đổi); tiêu đề "3-5 seeds" → "LP: 5 seeds · Fine-tune: 3 seeds"; trục y bắt đầu từ 75% làm khoảng cách trông lớn hơn → nói rõ khi trình bày.
 - EuroSAT: `plots/eval_v2_knn5/frozen_curves_eurosat.png` dùng được thay cho `eurosat_comparison.png`.
 
-### 🟡 2.3 `scripts/run_finetune.sh` hỏng
+### 🟢 2.3 `scripts/run_finetune.sh` — ĐÃ SỬA (Zam, `a7973cd`)
 
-In "Completed" **trước** khi chạy, gọi `python finetune.py` sai thư mục (file ở `src/`), và chạy thêm 2 run lẻ trước `--grid` (gây trùng key trong CSV). Sửa tối thiểu:
+Giờ: `set -e`, xóa `results/finetune_grid.csv` cũ, chạy `python src/finetune.py --grid` từ repo root, in "Completed" **sau** khi chạy xong. Đúng như yêu cầu.
 
-```bash
-rm -f results/finetune_grid.csv
-python src/finetune.py --grid
-```
+### 🟡 2.4 Fine-tune và frozen dùng ảnh k-shot KHÁC NHAU; `splits/*.json` không tái tạo được
 
-### 🟢 2.4 Fine-tune không đọc `splits/*.json`
+Zam kiểm tra (có `data/`): ảnh k-shot mà `finetune.py` tự sinh bằng `make_kshot_splits` **chỉ trùng ~3%** với `splits/pets_seed*_k*.json` ở k=5/10/25 (≈ mức trùng ngẫu nhiên); k=all giống hệt. Báo cáo 01/10 đoán "nên trùng" — **sai**. Lý do: `splits/*.json` được commit cùng pipeline eval của Đức (`87ed900`), **không** sinh từ `src/sampler.py`; Zam thử `random` và nhiều generator numpy đều không tái tạo được → nhiều khả năng từ một notebook chưa commit. Manager chưa tự kiểm tra con số 3% được (không có `data/`); Zam có script kiểm tra trong tài liệu riêng.
 
-`finetune.py` gọi `make_kshot_splits(...)` lúc chạy thay vì đọc file JSON. Cùng thuật toán + cùng seed nên **nên** trùng, nhưng chưa verify (máy Manager không có `data/`).
+Hệ quả:
+- Không có leakage, không sai: cả hai đều là cách chọn ngẫu nhiên hợp lệ (đúng k ảnh/lớp, từ trainval) — splits JSON đã được verify độc lập (mục 4.3).
+- So sánh FT vs LP ở k ≤ 25 là so **mean** của các bộ ảnh ngẫu nhiên khác nhau, không phải so theo cặp seed. Ghi một dòng trên slide limitations.
+- Repro check: `splits/` không sinh lại được từ code trong repo → cần Đức cho biết / commit code đã sinh ra chúng.
 
 ### 🟡 2.5 Reproducibility: Linear Probe không khớp tuyệt đối giữa các máy
 
@@ -146,7 +157,7 @@ Tác dụng của `knn_k=5` so với `knn_k=20` (Pets ResNet): k=1 3.0 → 14.9,
 
 So với trước khi đổi V1: hiện tượng "ResNet thắng ở k ≤ 2 trên Pets" **biến mất** (đó là do weights V2); kết luận RQ2 giờ chắc chắn hơn vì frozen và fine-tune cùng điểm xuất phát.
 
-Q&A cần chuẩn bị thêm: vì sao dùng `knn_k=5` thay vì 20 (`knn_k=20` > ½ pool ở k=1/k=2 → gần random; 5 chọn theo pool nhỏ nhất, không theo test); vì sao kNN k=1 vẫn thấp; vì sao fine-tune thua LP; vì sao EuroSAT ResNet thắng ở ít nhãn; test set Pets là gì; vì sao đổi weights ResNet giữa chừng (để frozen và fine-tune cùng điểm xuất phát, đúng plan).
+Q&A cần chuẩn bị thêm: bug head Stage 2 (tự nêu trước; Zam có câu trả lời mẫu; nếu kịp, so với kết quả bản đã sửa ở backup slide); vì sao dùng `knn_k=5` thay vì 20 (`knn_k=20` > ½ pool ở k=1/k=2 → gần random; 5 chọn theo pool nhỏ nhất, không theo test); vì sao kNN k=1 vẫn thấp; vì sao fine-tune thua LP; vì sao EuroSAT ResNet thắng ở ít nhãn; test set Pets là gì; vì sao đổi weights ResNet giữa chừng (để frozen và fine-tune cùng điểm xuất phát, đúng plan).
 
 ---
 
@@ -207,6 +218,12 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 | 06/10 22:48 | Đức: kNN `knn_k=5` (`af699c1`, upload qua web) | ❌ ResNet dùng nhầm feature V2 (LP ResNet khớp bản V2 70/70) |
 | 06/10 23:35 – 07/10 00:02 | Đức: merge `main` vào `leanhduc` (`1a49d6b`), chạy lại `knn_k=5` trên feature V1 (`d754f89`) | ✅ Kiểm tra theo từng dòng, đạt. Freeze chốt hoàn toàn |
 | 07/10 00:08 | Thiết: `plots/finetune_vs_frozen.png` + `scripts/plot_finetune_vs_frozen.py` (`d908fb5`) | ✅ Số liệu 16/16 điểm khớp bảng, đạt yêu cầu mục 2.2 |
+| 07/10 | Manager merge `leanhduc` + `thiet` → `main`, commit docs (`5ac1e5a`) | ✅ |
+| 07/10 01:10 | Thiết: `cb09506` — vẽ lại `plots/eval_v2/frozen_curves_pets.png` | ❌ Chưa merge: không commit `make_plots.py` (style fine-tune chỉ có ở máy Thiết), vẽ trên bảng `knn_k=20` vào `eval_v2/` thay vì `eval_v2_knn5/`, thiếu EuroSAT, tiêu đề/chú thích chưa đổi |
+| 07/10 01:10 | Zam (`zam-audit`, `a7973cd`): audit fine-tune, `docs/ZAM_FINETUNE_EXPLAINED.md`, loss curves, sửa `run_finetune.sh`, `src/finetune_fixed.py` | ✅ Đạt. Phát hiện bug head Stage 2 (Manager xác nhận trên code) và split fine-tune ≠ `splits/*.json`. Chờ merge + quyết định của Managers |
+| 07/10 01:14–01:21 | Thiết: `72b57dc`, `f5b57c1` — commit `make_plots.py` có style fine-tune (đổi sang màu Okabe-Ito), vẽ lại `plots/eval_v2/` | 🟡 Tiến bộ nhưng chưa merge: branch chưa lấy `main` mới (không có file `knn_k=5`), vẫn vẽ bảng `knn_k=20`, tiêu đề chưa đổi, màu lệch `finetune_vs_frozen.png` |
+| 07/10 01:17 | Zam xóa `docs/ZAM_FINETUNE_EXPLAINED.md` khỏi `zam-audit` (`e145e93`) | Tài liệu giữ riêng; docs bỏ tham chiếu |
+| 07/10 | Managers chọn phương án (b): Zam chạy `finetune_fixed.py` ngay | ⏳ Đang chạy |
 
 ---
 
@@ -223,13 +240,18 @@ Không có test leakage theo thiết kế (tensor test là file riêng).
 [x] Kiểm tra lần chạy lại của Thu theo từng dòng
 [x] Merge branch thu → main
 [x] Kiểm tra lần chạy knn_k=5 của Đức theo từng dòng
-[ ] Merge branch leanhduc + thiet → main
+[x] Merge branch leanhduc + thiet → main (`5ac1e5a`, 07/10)
+[ ] make_plots.py: style fine-tune + vẽ lại plots/eval_v2_knn5/ (Thiết, mục 2.2)
 [x] plots/finetune_vs_frozen.png slide-ready (Thiết, 07/10)
 [ ] Draft slide lý thuyết + Q&A (Mỹ) — trễ từ 04/10
 [ ] Slide kết quả #10–#13 + phân tích #14–#16 theo master_table_wide_v2_knn5.csv — 08/10
-[ ] Audit fine-tune / câu trả lời Q&A (mục 2.1) — 08/10
-[ ] Sửa scripts/run_finetune.sh (mục 2.3) — 09/10
+[x] Audit fine-tune + loss curves (Zam, 07/10)
+[x] QUYẾT ĐỊNH: bug fine-tune → giữ số chính thức + nêu limitation, chạy finetune_fixed.py làm kết quả phụ (07/10)
+[ ] Zam: results/finetune_grid_fixed.csv 24 dòng + bảng phụ cho backup slide — sáng 08/10
+[x] Sửa scripts/run_finetune.sh (Zam, 07/10)
+[ ] Merge branch zam-audit → main
 [ ] Reproducibility check, sai số ~0.1 điểm (mục 2.5) — 09/10
-[ ] Verify make_kshot_splits lúc fine-tune == splits/pets_*.json (mục 2.4)
+[x] Verify split fine-tune vs splits/*.json → KHÁC (~3% trùng ở k ≤ 25), Zam kiểm tra (mục 2.4)
+[ ] Đức: nguồn gốc / code sinh splits/*.json (mục 2.4)
 [ ] Bổ sung pytest, tensorboard vào requirements.txt
 ```
