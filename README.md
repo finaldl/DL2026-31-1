@@ -19,41 +19,42 @@ live in [`docs/`](docs/):
 - [`docs/project_analysis.md`](docs/project_analysis.md) — per-role task explainer and acceptance criteria
 - [`docs/PROGRESS_CHECK.md`](docs/PROGRESS_CHECK.md) — audit log, open issues, who-does-what-next
 
-## Status (as of 2026-10-01)
+## Status (as of 2026-10-06 — experiment freeze)
 
 | Phase | State |
 |---|---|
 | Data download + nested k-shot splits (70 files) | ✅ Done, independently verified for Pets **and** EuroSAT (5 seeds each) |
-| Feature extraction (`src/features.py`, 8 cached `.pt` files) | ✅ Done |
-| Phase 1 — frozen grid (kNN + Linear Probe, 280 runs, v2 protocol) | ✅ Done |
+| Feature extraction (`src/features.py`, 8 cached `.pt` files) | ✅ Done — ResNet-50 re-extracted with `IMAGENET1K_V1` on 2026-10-06 to match fine-tuning |
+| Phase 1 — frozen grid (kNN + Linear Probe, 280 runs, v2 protocol) | ✅ Done (re-run 2026-10-06 with V1 ResNet features) |
 | Phase 2 — fine-tuning grid (24 runs, Pets) | ✅ Done (clean rerun, no duplicate keys) |
 | Combined master table (frozen + fine-tune, 64 summary rows) | ✅ Done |
-| Fine-tune vs. frozen plot | ⏳ Not yet — `plots/eval_v2/` predates the fine-tune merge |
-| Open decisions before slides | ⏳ kNN `knn_k` at tiny budgets; ResNet-50 weights mismatch (see [Known limitations](#known-limitations)) |
-| Slides, reproducibility check, rehearsals | ⏳ Week 3 (experiment freeze: Tue 2026-10-06) |
+| Plots | 🟡 `plots/eval_v2/frozen_curves_pets.png` now includes fine-tune curves; a slide-ready fine-tune vs. frozen figure is still to do |
+| Experiment freeze (2026-10-06) | 🔒 No new runs. `knn_k=20` kept as-is → disclosed as a limitation |
+| Slides, reproducibility check, rehearsals | ⏳ 2026-10-08 → 2026-10-11 |
 
 ## Headline results (Oxford-IIIT Pets, Top-1 %, mean ± std over seeds)
 
 | Method | Backbone | k=1 | k=5 | k=10 | k=25 | k=all |
 |---|---|---|---|---|---|---|
-| Linear Probe | ResNet-50 | **76.3 ± 5.2** | 87.7 ± 0.6 | 89.8 ± 0.8 | 91.5 ± 0.2 | 93.4 ± 0.0 |
-| Linear Probe | DINOv2 | 72.6 ± 4.0 | **88.3 ± 0.9** | **91.5 ± 0.2** | **93.9 ± 0.5** | **96.2 ± 0.0** |
-| kNN (v2) | ResNet-50 | 2.7 ± 0.0 | 54.8 ± 2.8 | 85.4 ± 1.2 | 89.6 ± 0.2 | 92.4 ± 0.0 |
+| Linear Probe | ResNet-50 | 71.2 ± 3.1 | 85.6 ± 0.6 | 89.2 ± 1.0 | 92.4 ± 0.3 | 94.3 ± 0.0 |
+| Linear Probe | DINOv2 | **72.6 ± 4.0** | **88.3 ± 0.9** | **91.5 ± 0.2** | **93.9 ± 0.5** | **96.2 ± 0.0** |
+| kNN (v2) | ResNet-50 | 3.0 ± 0.3 | 60.7 ± 1.0 | 85.9 ± 0.7 | 90.7 ± 0.3 | 93.6 ± 0.0 |
 | kNN (v2) | DINOv2 | 3.2 ± 0.6 | 58.1 ± 2.9 | 82.7 ± 0.6 | 90.1 ± 0.6 | 94.4 ± 0.0 |
 | Fine-tune | ResNet-50 | — | 79.4 ± 2.8 | 81.6 ± 0.7 | 86.8 ± 1.0 | 92.3 ± 0.6 |
 | Fine-tune | DINOv2 | — | 81.9 ± 1.3 | 88.4 ± 0.7 | 91.3 ± 0.2 | 95.2 ± 0.4 |
 
-Frozen: 5 seeds. Fine-tune: 3 seeds. Full tables (incl. k=2/50 and EuroSAT) in
-`results/master_table_wide_v2.csv`.
+Frozen: 5 seeds. Fine-tune: 3 seeds. Both phases use ResNet-50 `IMAGENET1K_V1`.
+Full tables (incl. k=2/50 and EuroSAT) in `results/master_table_wide_v2.csv`.
 
-Preliminary reading (still under audit — see `docs/PROGRESS_CHECK.md`):
-- **RQ1**: ResNet-50 leads at k ≤ 2; DINOv2 overtakes from k = 5 and the gap
-  widens with more labels (+2.8 pts at k=all, Linear Probe).
-- **RQ2**: in this grid fine-tuning never beats a Linear Probe on the same
-  backbone; the gap shrinks from ~6–8 pts at k=5 to ~1 pt at k=all. DINOv2
-  frozen + LP beats fine-tuned ResNet-50 at every budget.
-- **RQ3**: on EuroSAT the two backbones are within ~4 pts everywhere
-  (ResNet-50 slightly ahead at k ≤ 10, tied from k=25; both ~95% at k=all).
+Reading of the results:
+- **RQ1**: DINOv2 frozen features beat ResNet-50 at **every** label budget on
+  Pets (Linear Probe, +1.4 to +2.7 pts).
+- **RQ2**: with the fixed recipe, fine-tuning never beats a Linear Probe on the
+  same backbone. The gap shrinks as labels grow: ResNet-50 −6.1 / −7.5 / −5.6 /
+  −1.9 pts, DINOv2 −6.4 / −3.1 / −2.6 / −1.0 pts at k = 5 / 10 / 25 / all.
+  DINOv2 frozen + LP beats fine-tuned ResNet-50 at every budget.
+- **RQ3**: on EuroSAT the curves cross. ResNet-50 leads at k ≤ 10 (e.g. 70.2 vs
+  64.5 at k=2); DINOv2 leads from k=25 on (+1.6 to +1.9 pts; 95.2 vs 93.3 at k=all).
 
 ## Setup
 
@@ -108,7 +109,7 @@ features/{resnet50,dinov2}_{pets_trainval,pets_test,eurosat_train,eurosat_test}.
 each a dict `{"features": Tensor[N, D], "labels": Tensor[N]}`. Preprocessing:
 `Resize(256) → CenterCrop(224) → Normalize(ImageNet)`, no augmentation.
 
-Backbones: `resnet50` (torchvision **`IMAGENET1K_V2`**, 2048-d avgpool) and
+Backbones: `resnet50` (torchvision **`IMAGENET1K_V1`**, same weights as fine-tuning, 2048-d avgpool) and
 `dinov2_vits14` (`torch.hub`, self-supervised, 384-d CLS token).
 
 `src/evaluate_frozen.py` accepts both this split layout and a combined
@@ -142,10 +143,12 @@ overrides, e.g. `--knn-k`, `--knn-weights distance`).
 `results/frozen_grid.csv` / `results/master_table.csv` /
 `results/master_table_long.csv` / `plots/frozen_curves_*.png` /
 `results/KET_QUA_DOC_BAO.md` are the original 280-run grid (2026-09-26),
-produced with **distance-weighted** kNN. Kept for provenance. Its kNN numbers
-at small k are much higher than v2's (e.g. ResNet-50/Pets/k=1: 75.7% legacy vs.
-2.7% v2) — this is the weighting scheme, not a feature or correctness bug. Its
-Linear Probe numbers match v2 exactly, confirming both used the same features.
+produced with **distance-weighted** kNN and ResNet-50 **`IMAGENET1K_V2`**
+features. Kept for provenance only — do not quote it on slides. Its kNN numbers
+at small k are much higher than v2's (e.g. DINOv2/Pets/k=1: 72.6% legacy vs.
+3.2% v2) — this is the weighting scheme, not a correctness bug. DINOv2 Linear
+Probe numbers match v2 (to within one test image), confirming the same DINOv2
+features; ResNet-50 numbers differ because v2 now uses V1 weights.
 
 ### 5. Fine-tuning
 
@@ -191,24 +194,26 @@ python3 scripts/make_plots.py   # re-draws plots/eval_v2/ from master_table_v2.c
 ```
 
 The committed `master_table_v2.csv` already contains frozen (56) + fine-tune (8)
-= 64 summary rows. The committed plots were drawn before the fine-tune merge;
-re-running `make_plots.py` adds the fine-tune curves to the Pets plot.
+= 64 summary rows, and the committed Pets plot already includes the fine-tune
+curves (title still says "Frozen-feature evaluation"; a dedicated fine-tune vs.
+frozen figure is still to do).
 
 ## Known limitations
 
 - **kNN at k=1/k=2**: `knn_k=20` is fixed across budgets. With 37/74 Pets (or
   10/20 EuroSAT) training samples, a 20-neighbour uniform vote washes out the
   signal — kNN sits near chance (EuroSAT k=1/2 is a constant 11.74%, because
-  `n_train ≤ 20` means every test image votes over the whole pool). Pending
-  decision: scale `knn_k` with `n_train`, or disclose on the results slide.
-- **ResNet-50 weights differ between phases**: frozen features use
-  `IMAGENET1K_V2`, fine-tuning uses `IMAGENET1K_V1` (the plan specifies V1).
-  The ResNet frozen-vs-fine-tune comparison (RQ2) is confounded until aligned.
+  `n_train ≤ 20` means every test image votes over the whole pool). Kept as-is
+  at the experiment freeze; kNN is reported only from k ≥ 5, and Linear Probe
+  is the primary frozen method.
+- **Linear Probe is not bit-exact across machines**: re-running on different
+  hardware can move a result by one test image (≤ 0.07 pts on Pets). Compare
+  reproductions with a ~0.1-pt tolerance.
 - **Fine-tune recipe** equals the plan's initial candidates; there is no
   validation split in `finetune.py`, so no tuning at k=10/25 is recorded.
 - **Pets test set** is a random stratified 20% of the HF train split, not the
   official test split; Pets breeds also overlap with ImageNet-1K classes,
-  which favours the supervised ResNet-50 at very low k.
+  which may favour the supervised ResNet-50.
 
 ## Tests
 
@@ -228,7 +233,7 @@ scripts/    CLI entry points (frozen grid, master table, plots, shell wrappers)
 splits/     deterministic nested k-shot index files (70 files)
 features/   cached backbone features (gitignored, generated locally)
 results/    raw CSVs, master tables, benchmark/run logs
-plots/      accuracy-vs-label-budget figures (legacy + eval_v2)
+plots/      accuracy-vs-label-budget figures (eval_v2 = current; top level = legacy)
 runs/       TensorBoard logs from fine-tuning (24 runs)
 tests/      pytest suite for the evaluation pipeline
 ```
