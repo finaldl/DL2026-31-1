@@ -33,7 +33,7 @@ def extract_features(model, dataset, batch_size=64):
     return torch.cat(all_feats), torch.cat(all_labels)
 
 def get_resnet50_backbone():
-    weights = ResNet50_Weights.IMAGENET1K_V2
+    weights = ResNet50_Weights.IMAGENET1K_V1
     model = resnet50(weights=weights)
     model.fc = torch.nn.Identity()
     return model.to(device)
